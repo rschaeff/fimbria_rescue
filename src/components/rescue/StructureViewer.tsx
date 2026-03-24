@@ -139,7 +139,7 @@ export default function StructureViewer({ domainId, structures }: StructureViewe
       )}
       <div
         ref={viewerRef}
-        className="w-full h-[500px] border border-gray-200 dark:border-gray-700 rounded-lg"
+        className="w-full h-[500px] border border-gray-200 dark:border-gray-700 rounded-lg relative overflow-hidden"
       />
       <p className="text-xs text-gray-400 mt-2">
         Colored by pLDDT: red (&lt;50) / white (50-70) / blue (&gt;70)
