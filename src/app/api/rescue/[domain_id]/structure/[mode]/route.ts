@@ -20,13 +20,18 @@ export async function GET(
     }
 
     const data = await readFile(structure.file_path, 'utf-8');
+    const download = _request.nextUrl.searchParams.has('download');
 
-    return new NextResponse(data, {
-      headers: {
-        'Content-Type': 'chemical/x-cif',
-        'Cache-Control': 'public, max-age=86400, stale-while-revalidate=3600',
-      },
-    });
+    const headers: Record<string, string> = {
+      'Content-Type': 'chemical/x-cif',
+      'Cache-Control': 'public, max-age=86400, stale-while-revalidate=3600',
+    };
+
+    if (download) {
+      headers['Content-Disposition'] = `attachment; filename="${domain_id}_${mode}.cif"`;
+    }
+
+    return new NextResponse(data, { headers });
   } catch (error) {
     console.error('Error serving structure:', error);
     return NextResponse.json(

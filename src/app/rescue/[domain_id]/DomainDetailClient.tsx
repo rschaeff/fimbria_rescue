@@ -97,6 +97,14 @@ export default function DomainDetailClient({ detail, plddts, sequences, structur
         />
       </div>
 
+      {/* Structure Viewer */}
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6 mb-8">
+        <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
+          3D Structure
+        </h2>
+        <StructureViewer domainId={target.domain_id} structures={structures} />
+      </div>
+
       {/* pLDDT Profile Chart */}
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6 mb-8">
         <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
@@ -105,13 +113,38 @@ export default function DomainDetailClient({ detail, plddts, sequences, structur
         <PlddtChart monomer={plddts.monomer} dimer={plddts.dimer} />
       </div>
 
-      {/* Structure Viewer */}
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6 mb-8">
-        <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
-          3D Structure
-        </h2>
-        <StructureViewer domainId={target.domain_id} structures={structures} />
-      </div>
+      {/* Download Structures */}
+      {structures.length > 0 && (
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6 mb-8">
+          <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
+            Download Structures
+          </h2>
+          <div className="flex flex-wrap gap-3">
+            {structures.find((s) => s.mode === 'monomer_domain') && (
+              <a
+                href={`/api/rescue/${target.domain_id}/structure/monomer_domain?download`}
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-md border border-gray-300 dark:border-gray-600 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+              >
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                </svg>
+                Monomer CIF
+              </a>
+            )}
+            {structures.find((s) => s.mode === 'dimer_domain') && (
+              <a
+                href={`/api/rescue/${target.domain_id}/structure/dimer_domain?download`}
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-md border border-gray-300 dark:border-gray-600 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+              >
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                </svg>
+                Dimer CIF
+              </a>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Sequence */}
       {domainSeq && (

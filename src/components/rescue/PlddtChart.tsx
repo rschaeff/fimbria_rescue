@@ -42,11 +42,11 @@ export default function PlddtChart({ monomer, dimer }: PlddtChartProps) {
 
   return (
     <ResponsiveContainer width="100%" height={400}>
-      <ComposedChart data={data} margin={{ top: 5, right: 20, bottom: 20, left: 10 }}>
+      <ComposedChart data={data} margin={{ top: 5, right: 20, bottom: 5, left: 10 }}>
         <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
         <XAxis
           dataKey="residue"
-          label={{ value: 'Residue Index', position: 'insideBottom', offset: -10 }}
+          label={{ value: 'Residue Index', position: 'insideBottomRight', offset: 0 }}
           tick={{ fontSize: 12 }}
         />
         <YAxis
@@ -63,10 +63,10 @@ export default function PlddtChart({ monomer, dimer }: PlddtChartProps) {
           }}
           formatter={(value, name) => [
             typeof value === 'number' ? value.toFixed(1) : '-',
-            name === 'monomer' ? 'Monomer' : 'Dimer (chain A)',
+            String(name),
           ]}
         />
-        <Legend />
+        <Legend verticalAlign="top" />
         <ReferenceLine
           y={50}
           stroke="#ef4444"
