@@ -91,6 +91,45 @@ export interface RescueRow {
   rescue_class: string;
   iptm: number;
   inter_chain_pae: number;
+  has_nte_to_body_dsc: boolean | null;
+  nte_to_body_hbonds: number | null;
+  has_cterm_reciprocal: boolean | null;
+  total_inter_hbonds: number | null;
+}
+
+export interface InterChainHbond {
+  donor_chain: string;
+  donor_res: number;
+  donor_name: string;
+  acceptor_chain: string;
+  acceptor_res: number;
+  acceptor_name: string;
+  no_distance: number;
+  co_n_angle: number;
+}
+
+export interface StrandContact {
+  direction: 'A->B' | 'B->A';
+  donor_range: string;
+  acceptor_range: string;
+  num_hbonds: number;
+}
+
+export interface StrandExchange {
+  id: number;
+  prediction_id: number;
+  target_id: number;
+  total_inter_hbonds: number;
+  nte_inter_hbonds: number;
+  has_nte_to_body_dsc: boolean;
+  nte_to_body_hbonds: number;
+  nte_donor_range: string | null;
+  body_acceptor_range: string | null;
+  has_cterm_reciprocal: boolean;
+  cterm_donor_range: string | null;
+  cterm_acceptor_range: string | null;
+  num_strand_contacts: number;
+  strand_contact_details: string;
 }
 
 export interface DomainDetail {
@@ -105,6 +144,8 @@ export interface StatsData {
   total_predictions: number;
   completed_predictions: number;
   rescue_classes: { rescue_class: string; count: number }[];
+  dsc_count: number;
+  reciprocal_count: number;
 }
 
 export interface SequenceData {

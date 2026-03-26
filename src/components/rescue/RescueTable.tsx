@@ -13,6 +13,7 @@ interface RescueFilters {
   organism?: string;
   delta_min?: number;
   delta_max?: number;
+  dsc?: string;
 }
 
 interface RescueTableProps {
@@ -42,6 +43,7 @@ export default function RescueTable({
   const [organism, setOrganism] = useState(initialFilters.organism || '');
   const [deltaMin, setDeltaMin] = useState(initialFilters.delta_min?.toString() || '');
   const [deltaMax, setDeltaMax] = useState(initialFilters.delta_max?.toString() || '');
+  const [dsc, setDsc] = useState(initialFilters.dsc || '');
 
   const buildUrl = (overrides: Record<string, string | number | undefined>) => {
     const params = new URLSearchParams();
@@ -54,6 +56,7 @@ export default function RescueTable({
       organism: organism || undefined,
       delta_min: deltaMin || undefined,
       delta_max: deltaMax || undefined,
+      dsc: dsc || undefined,
       ...overrides,
     };
     for (const [k, v] of Object.entries(values)) {
@@ -87,7 +90,7 @@ export default function RescueTable({
     <div>
       {/* Filters */}
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-4 mb-6">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-4">
           <div>
             <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">
               Rescue Class
@@ -103,6 +106,20 @@ export default function RescueTable({
                   {c.replace('_', ' ')}
                 </option>
               ))}
+            </select>
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">
+              DSC Detected
+            </label>
+            <select
+              value={dsc}
+              onChange={(e) => setDsc(e.target.value)}
+              className="w-full rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 px-3 py-2 text-sm"
+            >
+              <option value="">All</option>
+              <option value="yes">Yes</option>
+              <option value="no">No</option>
             </select>
           </div>
           <div>
@@ -201,6 +218,12 @@ export default function RescueTable({
               <th className={thClass} onClick={() => handleSort('rescue_class')}>
                 Class{sortIndicator('rescue_class')}
               </th>
+              <th className={thClass} onClick={() => handleSort('has_nte_to_body_dsc')}>
+                DSC{sortIndicator('has_nte_to_body_dsc')}
+              </th>
+              <th className={thClass} onClick={() => handleSort('nte_to_body_hbonds')}>
+                Nte H-bonds{sortIndicator('nte_to_body_hbonds')}
+              </th>
             </tr>
           </thead>
           <tbody className="bg-white dark:bg-gray-900 divide-y divide-gray-200 dark:divide-gray-700">
@@ -243,6 +266,12 @@ export default function RescueTable({
                 </td>
                 <td className="px-4 py-3 text-sm">
                   <RescueClassBadge rescueClass={row.rescue_class} />
+                </td>
+                <td className="px-4 py-3 text-sm text-gray-900 dark:text-gray-100">
+                  {row.has_nte_to_body_dsc ? '\u2713' : ''}
+                </td>
+                <td className="px-4 py-3 text-sm text-gray-900 dark:text-gray-100">
+                  {row.nte_to_body_hbonds ?? '-'}
                 </td>
               </tr>
             ))}

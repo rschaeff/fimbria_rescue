@@ -28,7 +28,7 @@ export default async function HomePage() {
         </p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-6 mb-12">
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6 text-center">
           <div className="text-3xl font-bold text-blue-600 dark:text-blue-400">
             {stats.total_targets}
@@ -46,6 +46,18 @@ export default async function HomePage() {
             {rescueTotal}
           </div>
           <div className="text-sm text-gray-500 dark:text-gray-400 mt-1">Rescue Analyses</div>
+        </div>
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6 text-center">
+          <div className="text-3xl font-bold text-green-600 dark:text-green-400">
+            {stats.dsc_count}
+          </div>
+          <div className="text-sm text-gray-500 dark:text-gray-400 mt-1">DSC Detected</div>
+        </div>
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6 text-center">
+          <div className="text-3xl font-bold text-green-600 dark:text-green-400">
+            {stats.reciprocal_count}
+          </div>
+          <div className="text-sm text-gray-500 dark:text-gray-400 mt-1">C-term Reciprocal</div>
         </div>
       </div>
 

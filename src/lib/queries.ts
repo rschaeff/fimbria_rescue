@@ -10,16 +10,20 @@ import type {
   Target,
   RescueAnalysis,
   Prediction,
+  StrandExchange,
+  InterChainHbond,
 } from './types';
 
 export async function getStats(): Promise<StatsData> {
-  const [targets, predictions, completed, rescueClasses] = await Promise.all([
+  const [targets, predictions, completed, rescueClasses, dscCount, reciprocalCount] = await Promise.all([
     queryOne<{ count: string }>('SELECT COUNT(*)::text as count FROM fimbria.targets'),
     queryOne<{ count: string }>('SELECT COUNT(*)::text as count FROM fimbria.predictions'),
     queryOne<{ count: string }>('SELECT COUNT(*)::text as count FROM fimbria.predictions WHERE completed = true'),
     query<{ rescue_class: string; count: string }>(
       'SELECT rescue_class, COUNT(*)::text as count FROM fimbria.rescue_analysis GROUP BY rescue_class'
     ),
+    queryOne<{ count: string }>('SELECT COUNT(*)::text as count FROM fimbria.strand_exchange WHERE has_nte_to_body_dsc = true'),
+    queryOne<{ count: string }>('SELECT COUNT(*)::text as count FROM fimbria.strand_exchange WHERE has_cterm_reciprocal = true'),
   ]);
 
   return {
@@ -30,6 +34,8 @@ export async function getStats(): Promise<StatsData> {
       rescue_class: r.rescue_class,
       count: parseInt(r.count),
     })),
+    dsc_count: parseInt(dscCount?.count || '0'),
+    reciprocal_count: parseInt(reciprocalCount?.count || '0'),
   };
 }
 
@@ -39,6 +45,7 @@ interface RescueFilters {
   organism?: string;
   delta_min?: number;
   delta_max?: number;
+  dsc?: string;
 }
 
 function buildRescueWhere(
@@ -67,6 +74,11 @@ function buildRescueWhere(
     params.push(filters.delta_max);
     conditions.push(`r.delta_mean_plddt <= $${params.length}`);
   }
+  if (filters.dsc === 'yes') {
+    conditions.push('se.has_nte_to_body_dsc = true');
+  } else if (filters.dsc === 'no') {
+    conditions.push('(se.has_nte_to_body_dsc = false OR se.has_nte_to_body_dsc IS NULL)');
+  }
 
   return conditions.length > 0 ? 'WHERE ' + conditions.join(' AND ') : '';
 }
@@ -82,6 +94,9 @@ const ALLOWED_SORT_COLUMNS: Record<string, string> = {
   rescue_class: 'r.rescue_class',
   iptm: 'p.iptm',
   inter_chain_pae: 'p.inter_chain_pae',
+  has_nte_to_body_dsc: 'se.has_nte_to_body_dsc',
+  nte_to_body_hbonds: 'se.nte_to_body_hbonds',
+  total_inter_hbonds: 'se.total_inter_hbonds',
 };
 
 export async function getRescueList(
@@ -107,10 +122,13 @@ export async function getRescueList(
     `SELECT t.domain_id, t.organism, t.f_group, t.domain_length,
             r.mono_mean_plddt, r.dimer_mean_plddt, r.delta_mean_plddt,
             r.rescued_residues, r.rescue_class,
-            p.iptm, p.inter_chain_pae
+            p.iptm, p.inter_chain_pae,
+            se.has_nte_to_body_dsc, se.nte_to_body_hbonds,
+            se.has_cterm_reciprocal, se.total_inter_hbonds
      FROM fimbria.targets t
      JOIN fimbria.rescue_analysis r ON t.id = r.target_id
      JOIN fimbria.predictions p ON r.dimer_prediction_id = p.id
+     LEFT JOIN fimbria.strand_exchange se ON se.prediction_id = p.id
      ${where}
      ORDER BY ${sortColumn} ${dir}
      LIMIT ${limitParam} OFFSET ${offsetParam}`,
@@ -127,6 +145,7 @@ export async function getRescueCount(filters: RescueFilters = {}): Promise<numbe
      FROM fimbria.targets t
      JOIN fimbria.rescue_analysis r ON t.id = r.target_id
      JOIN fimbria.predictions p ON r.dimer_prediction_id = p.id
+     LEFT JOIN fimbria.strand_exchange se ON se.prediction_id = p.id
      ${where}`,
     params
   );
@@ -226,6 +245,43 @@ export async function getStructurePaths(domainId: string): Promise<StructurePath
      FROM fimbria.structures s
      JOIN fimbria.predictions p ON s.prediction_id = p.id
      WHERE p.target_id = $1`,
+    [target.id]
+  );
+}
+
+export async function getStrandExchange(domainId: string): Promise<StrandExchange | null> {
+  const target = await queryOne<{ id: number }>(
+    'SELECT id FROM fimbria.targets WHERE domain_id = $1',
+    [domainId]
+  );
+
+  if (!target) return null;
+
+  return queryOne<StrandExchange>(
+    `SELECT se.*
+     FROM fimbria.strand_exchange se
+     JOIN fimbria.predictions p ON se.prediction_id = p.id
+     WHERE p.target_id = $1 AND p.mode = 'dimer_domain'`,
+    [target.id]
+  );
+}
+
+export async function getHbonds(domainId: string): Promise<InterChainHbond[]> {
+  const target = await queryOne<{ id: number }>(
+    'SELECT id FROM fimbria.targets WHERE domain_id = $1',
+    [domainId]
+  );
+
+  if (!target) return [];
+
+  return query<InterChainHbond>(
+    `SELECT h.donor_chain, h.donor_res, h.donor_name,
+            h.acceptor_chain, h.acceptor_res, h.acceptor_name,
+            h.no_distance, h.co_n_angle
+     FROM fimbria.inter_chain_hbonds h
+     JOIN fimbria.predictions p ON h.prediction_id = p.id
+     WHERE p.target_id = $1 AND p.mode = 'dimer_domain'
+     ORDER BY h.donor_chain, h.donor_res`,
     [target.id]
   );
 }

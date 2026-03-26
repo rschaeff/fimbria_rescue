@@ -5,7 +5,9 @@ import Link from 'next/link';
 import RescueClassBadge from '@/components/rescue/RescueClassBadge';
 import MetricsCard from '@/components/rescue/MetricsCard';
 import SequenceViewer from '@/components/rescue/SequenceViewer';
-import type { DomainDetail, ResiduePlddt, SequenceData, StructurePath } from '@/lib/types';
+import StrandExchangeCard from '@/components/rescue/StrandExchangeCard';
+import HbondTable from '@/components/rescue/HbondTable';
+import type { DomainDetail, ResiduePlddt, SequenceData, StructurePath, StrandExchange, InterChainHbond } from '@/lib/types';
 
 const PlddtChart = dynamic(() => import('@/components/rescue/PlddtChart'), {
   ssr: false,
@@ -22,9 +24,11 @@ interface Props {
   plddts: { monomer: ResiduePlddt[]; dimer: ResiduePlddt[] };
   sequences: SequenceData[];
   structures: StructurePath[];
+  exchange: StrandExchange | null;
+  hbonds: InterChainHbond[];
 }
 
-export default function DomainDetailClient({ detail, plddts, sequences, structures }: Props) {
+export default function DomainDetailClient({ detail, plddts, sequences, structures, exchange, hbonds }: Props) {
   const { target, rescue, monomer, dimer } = detail;
 
   const domainSeq = sequences.find((s) => s.seq_type === 'domain');
@@ -96,6 +100,26 @@ export default function DomainDetailClient({ detail, plddts, sequences, structur
           ]}
         />
       </div>
+
+      {/* Strand Exchange Evidence */}
+      {exchange && (
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6 mb-8">
+          <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
+            Strand Exchange Evidence
+          </h2>
+          <StrandExchangeCard exchange={exchange} hbonds={hbonds} domainLength={target.domain_length} />
+        </div>
+      )}
+
+      {/* H-bond Details */}
+      {hbonds.length > 0 && (
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6 mb-8">
+          <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
+            Inter-chain H-bonds ({hbonds.length})
+          </h2>
+          <HbondTable hbonds={hbonds} />
+        </div>
+      )}
 
       {/* Structure Viewer */}
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6 mb-8">

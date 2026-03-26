@@ -15,6 +15,7 @@ export async function GET(request: NextRequest) {
     organism: params.get('organism') || undefined,
     delta_min: params.get('delta_min') ? parseFloat(params.get('delta_min')!) : undefined,
     delta_max: params.get('delta_max') ? parseFloat(params.get('delta_max')!) : undefined,
+    dsc: params.get('dsc') || undefined,
   };
 
   const cacheKey = `rescue-${JSON.stringify({ page, sortBy, sortDir, filters })}`;
