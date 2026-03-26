@@ -154,6 +154,37 @@ export interface DomainCompleteness {
   curator_notes: string | null;
 }
 
+export interface ProteinDomainComparison {
+  id: number;
+  target_id: number;
+  protein_id: number;
+  monomer_protein_pred_id: number | null;
+  dimer_protein_pred_id: number | null;
+  monomer_domain_pred_id: number | null;
+  dimer_domain_pred_id: number | null;
+  protein_mono_domain_plddt: number | null;
+  protein_dimer_domain_plddt: number | null;
+  protein_delta_domain_plddt: number | null;
+  domain_mono_plddt: number | null;
+  domain_dimer_plddt: number | null;
+  domain_delta_plddt: number | null;
+  protein_vs_domain_mono_delta: number | null;
+  protein_vs_domain_dimer_delta: number | null;
+  protein_dimer_rescued_in_domain: number | null;
+  has_protein_monomer: boolean;
+  has_protein_dimer: boolean;
+}
+
+export interface ProteinInfo {
+  id: number;
+  uniprot_acc: string;
+  organism: string | null;
+  protein_length: number | null;
+  signal_peptide_pos: number | null;
+  num_domains: number;
+  is_multidomain: boolean;
+}
+
 export interface DomainDetail {
   target: Target;
   rescue: RescueAnalysis;

@@ -1,5 +1,5 @@
 import { notFound } from 'next/navigation';
-import { getRescueDetail, getResiduePlddts, getSequences, getStructurePaths, getStrandExchange, getHbonds, getDomainCompleteness } from '@/lib/queries';
+import { getRescueDetail, getResiduePlddts, getSequences, getStructurePaths, getStrandExchange, getHbonds, getDomainCompleteness, getProteinComparison } from '@/lib/queries';
 import DomainDetailClient from './DomainDetailClient';
 import type { Metadata } from 'next';
 
@@ -17,7 +17,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 export default async function DomainDetailPage({ params }: PageProps) {
   const { domain_id } = await params;
 
-  const [detail, plddts, sequences, structures, exchange, hbonds, completeness] = await Promise.all([
+  const [detail, plddts, sequences, structures, exchange, hbonds, completeness, proteinComparison] = await Promise.all([
     getRescueDetail(domain_id),
     getResiduePlddts(domain_id),
     getSequences(domain_id),
@@ -25,6 +25,7 @@ export default async function DomainDetailPage({ params }: PageProps) {
     getStrandExchange(domain_id),
     getHbonds(domain_id),
     getDomainCompleteness(domain_id),
+    getProteinComparison(domain_id),
   ]);
 
   if (!detail) {
@@ -40,6 +41,7 @@ export default async function DomainDetailPage({ params }: PageProps) {
       exchange={exchange}
       hbonds={hbonds}
       completeness={completeness}
+      proteinComparison={proteinComparison}
     />
   );
 }

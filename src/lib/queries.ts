@@ -13,6 +13,8 @@ import type {
   StrandExchange,
   InterChainHbond,
   DomainCompleteness,
+  ProteinDomainComparison,
+  ProteinInfo,
 } from './types';
 
 export async function getStats(): Promise<StatsData> {
@@ -301,6 +303,55 @@ export async function getHbonds(domainId: string): Promise<InterChainHbond[]> {
      ORDER BY h.donor_chain, h.donor_res`,
     [target.id]
   );
+}
+
+export async function getProteinComparison(domainId: string): Promise<{
+  comparison: ProteinDomainComparison;
+  protein: ProteinInfo;
+  proteinPlddts: { monomer: ResiduePlddt[]; dimer: ResiduePlddt[] };
+} | null> {
+  const target = await queryOne<{ id: number }>(
+    'SELECT id FROM fimbria.targets WHERE domain_id = $1',
+    [domainId]
+  );
+
+  if (!target) return null;
+
+  const comparison = await queryOne<ProteinDomainComparison>(
+    'SELECT * FROM fimbria.protein_domain_comparison WHERE target_id = $1',
+    [target.id]
+  );
+
+  if (!comparison) return null;
+
+  const protein = await queryOne<ProteinInfo>(
+    'SELECT * FROM fimbria.proteins WHERE id = $1',
+    [comparison.protein_id]
+  );
+
+  if (!protein) return null;
+
+  // Get protein-level pLDDTs using prediction IDs from comparison
+  let proteinPlddts: { monomer: ResiduePlddt[]; dimer: ResiduePlddt[] } = { monomer: [], dimer: [] };
+
+  const fetchPlddt = async (predId: number | null, mode: string) => {
+    if (!predId) return [];
+    return query<ResiduePlddt>(
+      `SELECT rp.residue_index, rp.plddt
+       FROM fimbria.residue_plddts rp
+       WHERE rp.prediction_id = $1 AND rp.chain = 'A'
+       ORDER BY rp.residue_index`,
+      [predId]
+    );
+  };
+
+  const [monoPlddts, dimerPlddts] = await Promise.all([
+    fetchPlddt(comparison.monomer_protein_pred_id, 'monomer_protein'),
+    fetchPlddt(comparison.dimer_protein_pred_id, 'dimer_protein'),
+  ]);
+  proteinPlddts = { monomer: monoPlddts, dimer: dimerPlddts };
+
+  return { comparison, protein, proteinPlddts };
 }
 
 export async function getDomainCompleteness(domainId: string): Promise<DomainCompleteness | null> {
