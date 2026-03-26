@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import Link from 'next/link';
 import RescueClassBadge from './RescueClassBadge';
+import CompletenessBadge from './CompletenessBadge';
 import Pagination from '@/components/ui/Pagination';
 import type { RescueRow } from '@/lib/types';
 
@@ -13,6 +14,7 @@ interface RescueFilters {
   organism?: string;
   delta_min?: number;
   delta_max?: number;
+  completeness?: string;
   dsc?: string;
 }
 
@@ -43,6 +45,7 @@ export default function RescueTable({
   const [organism, setOrganism] = useState(initialFilters.organism || '');
   const [deltaMin, setDeltaMin] = useState(initialFilters.delta_min?.toString() || '');
   const [deltaMax, setDeltaMax] = useState(initialFilters.delta_max?.toString() || '');
+  const [completenessFilter, setCompletenessFilter] = useState(initialFilters.completeness || '');
   const [dsc, setDsc] = useState(initialFilters.dsc || '');
 
   const buildUrl = (overrides: Record<string, string | number | undefined>) => {
@@ -56,6 +59,7 @@ export default function RescueTable({
       organism: organism || undefined,
       delta_min: deltaMin || undefined,
       delta_max: deltaMax || undefined,
+      completeness: completenessFilter || undefined,
       dsc: dsc || undefined,
       ...overrides,
     };
@@ -90,7 +94,7 @@ export default function RescueTable({
     <div>
       {/* Filters */}
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-4 mb-6">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-7 gap-4">
           <div>
             <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">
               Rescue Class
@@ -106,6 +110,22 @@ export default function RescueTable({
                   {c.replace('_', ' ')}
                 </option>
               ))}
+            </select>
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">
+              Completeness
+            </label>
+            <select
+              value={completenessFilter}
+              onChange={(e) => setCompletenessFilter(e.target.value)}
+              className="w-full rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 px-3 py-2 text-sm"
+            >
+              <option value="">All</option>
+              <option value="donor_strand_dependent">donor strand dependent</option>
+              <option value="self_complemented">self complemented</option>
+              <option value="complete">complete</option>
+              <option value="unknown">unknown</option>
             </select>
           </div>
           <div>
@@ -218,6 +238,9 @@ export default function RescueTable({
               <th className={thClass} onClick={() => handleSort('rescue_class')}>
                 Class{sortIndicator('rescue_class')}
               </th>
+              <th className={thClass} onClick={() => handleSort('completeness')}>
+                Completeness{sortIndicator('completeness')}
+              </th>
               <th className={thClass} onClick={() => handleSort('has_nte_to_body_dsc')}>
                 DSC{sortIndicator('has_nte_to_body_dsc')}
               </th>
@@ -266,6 +289,9 @@ export default function RescueTable({
                 </td>
                 <td className="px-4 py-3 text-sm">
                   <RescueClassBadge rescueClass={row.rescue_class} />
+                </td>
+                <td className="px-4 py-3 text-sm">
+                  {row.completeness && <CompletenessBadge completeness={row.completeness} />}
                 </td>
                 <td className="px-4 py-3 text-sm text-gray-900 dark:text-gray-100">
                   {row.has_nte_to_body_dsc ? '\u2713' : ''}

@@ -17,6 +17,7 @@ export default async function RescuePage({ searchParams }: PageProps) {
     organism: (params.organism as string) || undefined,
     delta_min: params.delta_min ? parseFloat(params.delta_min as string) : undefined,
     delta_max: params.delta_max ? parseFloat(params.delta_max as string) : undefined,
+    completeness: (params.completeness as string) || undefined,
     dsc: (params.dsc as string) || undefined,
   };
 

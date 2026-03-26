@@ -12,10 +12,11 @@ import type {
   Prediction,
   StrandExchange,
   InterChainHbond,
+  DomainCompleteness,
 } from './types';
 
 export async function getStats(): Promise<StatsData> {
-  const [targets, predictions, completed, rescueClasses, dscCount, reciprocalCount] = await Promise.all([
+  const [targets, predictions, completed, rescueClasses, dscCount, reciprocalCount, completenessClasses] = await Promise.all([
     queryOne<{ count: string }>('SELECT COUNT(*)::text as count FROM fimbria.targets'),
     queryOne<{ count: string }>('SELECT COUNT(*)::text as count FROM fimbria.predictions'),
     queryOne<{ count: string }>('SELECT COUNT(*)::text as count FROM fimbria.predictions WHERE completed = true'),
@@ -24,6 +25,9 @@ export async function getStats(): Promise<StatsData> {
     ),
     queryOne<{ count: string }>('SELECT COUNT(*)::text as count FROM fimbria.strand_exchange WHERE has_nte_to_body_dsc = true'),
     queryOne<{ count: string }>('SELECT COUNT(*)::text as count FROM fimbria.strand_exchange WHERE has_cterm_reciprocal = true'),
+    query<{ completeness: string; count: string }>(
+      'SELECT completeness, COUNT(*)::text as count FROM fimbria.domain_completeness GROUP BY completeness'
+    ),
   ]);
 
   return {
@@ -36,11 +40,16 @@ export async function getStats(): Promise<StatsData> {
     })),
     dsc_count: parseInt(dscCount?.count || '0'),
     reciprocal_count: parseInt(reciprocalCount?.count || '0'),
+    completeness_classes: completenessClasses.map((c) => ({
+      completeness: c.completeness,
+      count: parseInt(c.count),
+    })),
   };
 }
 
 interface RescueFilters {
   rescue_class?: string;
+  completeness?: string;
   f_group?: string;
   organism?: string;
   delta_min?: number;
@@ -74,6 +83,10 @@ function buildRescueWhere(
     params.push(filters.delta_max);
     conditions.push(`r.delta_mean_plddt <= $${params.length}`);
   }
+  if (filters.completeness) {
+    params.push(filters.completeness);
+    conditions.push(`dc.completeness = $${params.length}`);
+  }
   if (filters.dsc === 'yes') {
     conditions.push('se.has_nte_to_body_dsc = true');
   } else if (filters.dsc === 'no') {
@@ -97,6 +110,7 @@ const ALLOWED_SORT_COLUMNS: Record<string, string> = {
   has_nte_to_body_dsc: 'se.has_nte_to_body_dsc',
   nte_to_body_hbonds: 'se.nte_to_body_hbonds',
   total_inter_hbonds: 'se.total_inter_hbonds',
+  completeness: 'dc.completeness',
 };
 
 export async function getRescueList(
@@ -124,11 +138,13 @@ export async function getRescueList(
             r.rescued_residues, r.rescue_class,
             p.iptm, p.inter_chain_pae,
             se.has_nte_to_body_dsc, se.nte_to_body_hbonds,
-            se.has_cterm_reciprocal, se.total_inter_hbonds
+            se.has_cterm_reciprocal, se.total_inter_hbonds,
+            dc.completeness, dc.complete_range, dc.donor_strand_range
      FROM fimbria.targets t
      JOIN fimbria.rescue_analysis r ON t.id = r.target_id
      JOIN fimbria.predictions p ON r.dimer_prediction_id = p.id
      LEFT JOIN fimbria.strand_exchange se ON se.prediction_id = p.id
+     LEFT JOIN fimbria.domain_completeness dc ON dc.target_id = t.id
      ${where}
      ORDER BY ${sortColumn} ${dir}
      LIMIT ${limitParam} OFFSET ${offsetParam}`,
@@ -146,6 +162,7 @@ export async function getRescueCount(filters: RescueFilters = {}): Promise<numbe
      JOIN fimbria.rescue_analysis r ON t.id = r.target_id
      JOIN fimbria.predictions p ON r.dimer_prediction_id = p.id
      LEFT JOIN fimbria.strand_exchange se ON se.prediction_id = p.id
+     LEFT JOIN fimbria.domain_completeness dc ON dc.target_id = t.id
      ${where}`,
     params
   );
@@ -282,6 +299,20 @@ export async function getHbonds(domainId: string): Promise<InterChainHbond[]> {
      JOIN fimbria.predictions p ON h.prediction_id = p.id
      WHERE p.target_id = $1 AND p.mode = 'dimer_domain'
      ORDER BY h.donor_chain, h.donor_res`,
+    [target.id]
+  );
+}
+
+export async function getDomainCompleteness(domainId: string): Promise<DomainCompleteness | null> {
+  const target = await queryOne<{ id: number }>(
+    'SELECT id FROM fimbria.targets WHERE domain_id = $1',
+    [domainId]
+  );
+
+  if (!target) return null;
+
+  return queryOne<DomainCompleteness>(
+    'SELECT * FROM fimbria.domain_completeness WHERE target_id = $1',
     [target.id]
   );
 }

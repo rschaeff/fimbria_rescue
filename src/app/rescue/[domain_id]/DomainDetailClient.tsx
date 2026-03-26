@@ -7,7 +7,9 @@ import MetricsCard from '@/components/rescue/MetricsCard';
 import SequenceViewer from '@/components/rescue/SequenceViewer';
 import StrandExchangeCard from '@/components/rescue/StrandExchangeCard';
 import HbondTable from '@/components/rescue/HbondTable';
-import type { DomainDetail, ResiduePlddt, SequenceData, StructurePath, StrandExchange, InterChainHbond } from '@/lib/types';
+import CompletenessCard from '@/components/rescue/CompletenessCard';
+import CompletenessBadge from '@/components/rescue/CompletenessBadge';
+import type { DomainDetail, ResiduePlddt, SequenceData, StructurePath, StrandExchange, InterChainHbond, DomainCompleteness } from '@/lib/types';
 
 const PlddtChart = dynamic(() => import('@/components/rescue/PlddtChart'), {
   ssr: false,
@@ -26,9 +28,10 @@ interface Props {
   structures: StructurePath[];
   exchange: StrandExchange | null;
   hbonds: InterChainHbond[];
+  completeness: DomainCompleteness | null;
 }
 
-export default function DomainDetailClient({ detail, plddts, sequences, structures, exchange, hbonds }: Props) {
+export default function DomainDetailClient({ detail, plddts, sequences, structures, exchange, hbonds, completeness }: Props) {
   const { target, rescue, monomer, dimer } = detail;
 
   const domainSeq = sequences.find((s) => s.seq_type === 'domain');
@@ -51,6 +54,7 @@ export default function DomainDetailClient({ detail, plddts, sequences, structur
             {target.domain_id}
           </h1>
           <RescueClassBadge rescueClass={rescue.rescue_class} />
+          {completeness && <CompletenessBadge completeness={completeness.completeness} />}
         </div>
         <div className="text-sm text-gray-600 dark:text-gray-400 space-y-1">
           <p>
@@ -100,6 +104,16 @@ export default function DomainDetailClient({ detail, plddts, sequences, structur
           ]}
         />
       </div>
+
+      {/* Domain Completeness */}
+      {completeness && (
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6 mb-8">
+          <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
+            Domain Completeness
+          </h2>
+          <CompletenessCard completeness={completeness} />
+        </div>
+      )}
 
       {/* Strand Exchange Evidence */}
       {exchange && (

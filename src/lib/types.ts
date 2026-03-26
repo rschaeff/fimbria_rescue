@@ -95,6 +95,9 @@ export interface RescueRow {
   nte_to_body_hbonds: number | null;
   has_cterm_reciprocal: boolean | null;
   total_inter_hbonds: number | null;
+  completeness: string | null;
+  complete_range: string | null;
+  donor_strand_range: string | null;
 }
 
 export interface InterChainHbond {
@@ -132,6 +135,25 @@ export interface StrandExchange {
   strand_contact_details: string;
 }
 
+export interface DomainCompleteness {
+  id: number;
+  target_id: number;
+  ecod_range: string;
+  has_donor_strand: boolean;
+  donor_strand_chain: string | null;
+  donor_strand_range: string | null;
+  donor_strand_hbonds: number;
+  body_acceptor_range: string | null;
+  has_cterm_exchange: boolean;
+  cterm_donor_range: string | null;
+  cterm_acceptor_range: string | null;
+  complete_range: string | null;
+  completeness: 'complete' | 'self_complemented' | 'donor_strand_dependent' | 'unknown';
+  evidence_summary: string;
+  curator_reviewed: boolean;
+  curator_notes: string | null;
+}
+
 export interface DomainDetail {
   target: Target;
   rescue: RescueAnalysis;
@@ -146,6 +168,7 @@ export interface StatsData {
   rescue_classes: { rescue_class: string; count: number }[];
   dsc_count: number;
   reciprocal_count: number;
+  completeness_classes: { completeness: string; count: number }[];
 }
 
 export interface SequenceData {

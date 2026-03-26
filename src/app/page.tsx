@@ -85,6 +85,36 @@ export default async function HomePage() {
         </div>
       </div>
 
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6 mb-12">
+        <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
+          Domain Completeness
+        </h2>
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+          {stats.completeness_classes
+            .sort((a, b) => b.count - a.count)
+            .map((cc) => (
+              <div key={cc.completeness} className="text-center">
+                <span
+                  className={`inline-block px-3 py-1 rounded-full text-xs font-medium ${
+                    cc.completeness === 'donor_strand_dependent'
+                      ? 'bg-orange-100 text-orange-800 dark:bg-orange-900/50 dark:text-orange-300'
+                      : cc.completeness === 'self_complemented'
+                        ? 'bg-teal-100 text-teal-800 dark:bg-teal-900/50 dark:text-teal-300'
+                        : cc.completeness === 'complete'
+                          ? 'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300'
+                          : 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300'
+                  }`}
+                >
+                  {cc.completeness.replace(/_/g, ' ')}
+                </span>
+                <div className="text-2xl font-bold text-gray-900 dark:text-white mt-2">
+                  {cc.count}
+                </div>
+              </div>
+            ))}
+        </div>
+      </div>
+
       <div className="flex flex-col sm:flex-row gap-4 justify-center">
         <Link
           href="/rescue"
