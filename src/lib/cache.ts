@@ -63,25 +63,25 @@ class TTLCache<T> {
 }
 
 export const CACHE_TTL = {
-  STATS: 5 * 60 * 1000,
-  RESCUE: 30 * 60 * 1000,
-  LITERATURE: 60 * 60 * 1000,
-  DOMAIN: 60 * 60 * 1000,
+  STATS: 60 * 1000,
+  RESCUE: 2 * 60 * 1000,
+  LITERATURE: 5 * 60 * 1000,
+  DOMAIN: 2 * 60 * 1000,
 } as const;
 
 export const HTTP_CACHE_MAX_AGE = {
-  STATS: 300,
-  RESCUE: 1800,
-  LITERATURE: 3600,
-  DOMAIN: 3600,
+  STATS: 60,
+  RESCUE: 120,
+  LITERATURE: 300,
+  DOMAIN: 120,
 } as const;
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export const statsCache = new TTLCache<any>(5 * 60 * 1000);
+export const statsCache = new TTLCache<any>(60 * 1000);
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export const rescueCache = new TTLCache<any>(30 * 60 * 1000);
+export const rescueCache = new TTLCache<any>(2 * 60 * 1000);
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export const literatureCache = new TTLCache<any>(60 * 60 * 1000);
+export const literatureCache = new TTLCache<any>(5 * 60 * 1000);
 
 export async function cachedQuery<T>(
   cache: TTLCache<T>,
