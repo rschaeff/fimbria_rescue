@@ -10,6 +10,8 @@ export interface Target {
   is_multidomain: boolean;
   num_domains: number;
   f_group: string;
+  pfam_acc: string | null;
+  pfam_id: string | null;
   t_group: string;
   ecod_status: string;
   batch: string;
@@ -83,6 +85,8 @@ export interface RescueRow {
   domain_id: string;
   organism: string;
   f_group: string;
+  pfam_acc: string | null;
+  pfam_id: string | null;
   domain_length: number;
   mono_mean_plddt: number;
   dimer_mean_plddt: number;

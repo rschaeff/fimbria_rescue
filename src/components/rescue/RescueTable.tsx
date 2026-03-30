@@ -198,10 +198,21 @@ export default function RescueTable({
         </div>
       </div>
 
-      {/* Results count */}
-      <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
-        {initialTotal} result{initialTotal !== 1 ? 's' : ''}
-      </p>
+      {/* Results count + export */}
+      <div className="flex items-center justify-between mb-4">
+        <p className="text-sm text-gray-500 dark:text-gray-400">
+          {initialTotal} result{initialTotal !== 1 ? 's' : ''}
+        </p>
+        <a
+          href={buildUrl({ page: undefined }).replace('/rescue?', '/api/rescue/export?')}
+          className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-gray-600 dark:text-gray-400 border border-gray-300 dark:border-gray-600 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+        >
+          <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+          </svg>
+          Export CSV
+        </a>
+      </div>
 
       {/* Table */}
       <div className="overflow-x-auto bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
@@ -216,6 +227,9 @@ export default function RescueTable({
               </th>
               <th className={thClass} onClick={() => handleSort('f_group')}>
                 F-group{sortIndicator('f_group')}
+              </th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                Pfam
               </th>
               <th className={thClass} onClick={() => handleSort('mono_mean_plddt')}>
                 Mono pLDDT{sortIndicator('mono_mean_plddt')}
@@ -268,6 +282,21 @@ export default function RescueTable({
                 </td>
                 <td className="px-4 py-3 text-sm text-gray-900 dark:text-gray-100">
                   {row.f_group}
+                </td>
+                <td className="px-4 py-3 text-sm">
+                  {row.pfam_acc ? (
+                    <a
+                      href={`https://www.ebi.ac.uk/interpro/entry/pfam/${row.pfam_acc}/`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-blue-600 dark:text-blue-400 hover:underline"
+                      title={row.pfam_id || undefined}
+                    >
+                      {row.pfam_acc}
+                    </a>
+                  ) : (
+                    <span className="text-gray-400">-</span>
+                  )}
                 </td>
                 <td className="px-4 py-3 text-sm text-gray-900 dark:text-gray-100">
                   {Number(row.mono_mean_plddt).toFixed(1)}

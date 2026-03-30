@@ -135,7 +135,7 @@ export async function getRescueList(
   const offsetParam = `$${params.length}`;
 
   return query<RescueRow>(
-    `SELECT t.domain_id, t.organism, t.f_group, t.domain_length,
+    `SELECT t.domain_id, t.organism, t.f_group, t.pfam_acc, t.pfam_id, t.domain_length,
             r.mono_mean_plddt, r.dimer_mean_plddt, r.delta_mean_plddt,
             r.rescued_residues, r.rescue_class,
             p.iptm, p.inter_chain_pae,
@@ -150,6 +150,35 @@ export async function getRescueList(
      ${where}
      ORDER BY ${sortColumn} ${dir}
      LIMIT ${limitParam} OFFSET ${offsetParam}`,
+    params
+  );
+}
+
+export async function getRescueAll(
+  filters: RescueFilters = {},
+  sortBy: string = 'delta_mean_plddt',
+  sortDir: 'asc' | 'desc' = 'desc'
+): Promise<RescueRow[]> {
+  const params: (string | number | boolean | null)[] = [];
+  const where = buildRescueWhere(filters, params);
+  const sortColumn = ALLOWED_SORT_COLUMNS[sortBy] || 'r.delta_mean_plddt';
+  const dir = sortDir === 'asc' ? 'ASC' : 'DESC';
+
+  return query<RescueRow>(
+    `SELECT t.domain_id, t.organism, t.f_group, t.pfam_acc, t.pfam_id, t.domain_length,
+            r.mono_mean_plddt, r.dimer_mean_plddt, r.delta_mean_plddt,
+            r.rescued_residues, r.rescue_class,
+            p.iptm, p.inter_chain_pae,
+            se.has_nte_to_body_dsc, se.nte_to_body_hbonds,
+            se.has_cterm_reciprocal, se.total_inter_hbonds,
+            dc.completeness, dc.complete_range, dc.donor_strand_range
+     FROM fimbria.targets t
+     JOIN fimbria.rescue_analysis r ON t.id = r.target_id
+     JOIN fimbria.predictions p ON r.dimer_prediction_id = p.id
+     LEFT JOIN fimbria.strand_exchange se ON se.prediction_id = p.id
+     LEFT JOIN fimbria.domain_completeness dc ON dc.target_id = t.id
+     ${where}
+     ORDER BY ${sortColumn} ${dir}`,
     params
   );
 }

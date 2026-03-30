@@ -71,8 +71,15 @@ export default function DomainDetailClient({ detail, plddts, sequences, structur
         </div>
         <div className="text-sm text-gray-600 dark:text-gray-400">
           {target.uniprot_acc} &middot; {target.organism} &middot;
-          T-group {target.t_group}, F-group {target.f_group} &middot;
-          {target.domain_range} ({target.domain_length} res)
+          T-group {target.t_group}, F-group {target.f_group}
+          {target.pfam_acc && (
+            <>
+              {' '}&middot;{' '}
+              <a href={`https://www.ebi.ac.uk/interpro/entry/pfam/${target.pfam_acc}/`} target="_blank" rel="noopener noreferrer" className="text-blue-600 dark:text-blue-400 hover:underline">{target.pfam_acc}</a>
+              {target.pfam_id && <span className="text-gray-400"> ({target.pfam_id})</span>}
+            </>
+          )}
+          {' '}&middot; {target.domain_range} ({target.domain_length} res)
           {target.ecod_uid && (
             <>
               {' '}&middot;{' '}
