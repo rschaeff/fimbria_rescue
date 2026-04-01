@@ -1,11 +1,6 @@
 import Link from 'next/link';
-import dynamic from 'next/dynamic';
 import { getStats } from '@/lib/queries';
-
-const CompletenessDonut = dynamic(() => import('@/components/landing/CompletenessDonut'), {
-  ssr: false,
-  loading: () => <div className="h-[180px] w-[300px] bg-gray-100 dark:bg-gray-800 rounded-lg animate-pulse" />,
-});
+import CompletenessDonut from '@/components/landing/CompletenessDonut';
 
 export default async function HomePage() {
   const stats = await getStats();

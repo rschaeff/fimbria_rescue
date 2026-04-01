@@ -1,11 +1,6 @@
 import { getFamilies } from '@/lib/queries';
-import dynamic from 'next/dynamic';
 import FamilyTable from '@/components/families/FamilyTable';
-
-const FamilyBarChart = dynamic(() => import('@/components/families/FamilyBarChart'), {
-  ssr: false,
-  loading: () => <div className="h-[350px] bg-gray-100 dark:bg-gray-800 rounded-lg animate-pulse" />,
-});
+import FamilyBarChart from '@/components/families/FamilyBarChart';
 
 export default async function FamiliesPage() {
   const families = await getFamilies();
