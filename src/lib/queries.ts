@@ -15,33 +15,29 @@ import type {
   DomainCompleteness,
   ProteinDomainComparison,
   ProteinInfo,
+  PocketSignature,
+  ReclassificationProposal,
+  FamilyRow,
 } from './types';
 
 export async function getStats(): Promise<StatsData> {
-  const [targets, predictions, completed, rescueClasses, dscCount, reciprocalCount, completenessClasses] = await Promise.all([
-    queryOne<{ count: string }>('SELECT COUNT(*)::text as count FROM fimbria.targets'),
-    queryOne<{ count: string }>('SELECT COUNT(*)::text as count FROM fimbria.predictions'),
-    queryOne<{ count: string }>('SELECT COUNT(*)::text as count FROM fimbria.predictions WHERE completed = true'),
-    query<{ rescue_class: string; count: string }>(
-      'SELECT rescue_class, COUNT(*)::text as count FROM fimbria.rescue_analysis GROUP BY rescue_class'
-    ),
+  const [domains, totalHbonds, dscCount, confidentDimers, completenessClasses] = await Promise.all([
+    queryOne<{ count: string }>("SELECT COUNT(*)::text as count FROM fimbria.targets WHERE batch != 'controls'"),
+    queryOne<{ sum: string }>('SELECT COALESCE(SUM(total_inter_hbonds), 0)::text as sum FROM fimbria.strand_exchange'),
     queryOne<{ count: string }>('SELECT COUNT(*)::text as count FROM fimbria.strand_exchange WHERE has_nte_to_body_dsc = true'),
-    queryOne<{ count: string }>('SELECT COUNT(*)::text as count FROM fimbria.strand_exchange WHERE has_cterm_reciprocal = true'),
+    queryOne<{ count: string }>(
+      `SELECT COUNT(*)::text as count FROM fimbria.predictions WHERE mode = 'dimer_domain' AND completed = true AND iptm > 0.3`
+    ),
     query<{ completeness: string; count: string }>(
       'SELECT completeness, COUNT(*)::text as count FROM fimbria.domain_completeness GROUP BY completeness'
     ),
   ]);
 
   return {
-    total_targets: parseInt(targets?.count || '0'),
-    total_predictions: parseInt(predictions?.count || '0'),
-    completed_predictions: parseInt(completed?.count || '0'),
-    rescue_classes: rescueClasses.map((r) => ({
-      rescue_class: r.rescue_class,
-      count: parseInt(r.count),
-    })),
+    total_domains: parseInt(domains?.count || '0'),
+    total_hbonds: parseInt(totalHbonds?.sum || '0'),
+    confident_dimers: parseInt(confidentDimers?.count || '0'),
     dsc_count: parseInt(dscCount?.count || '0'),
-    reciprocal_count: parseInt(reciprocalCount?.count || '0'),
     completeness_classes: completenessClasses.map((c) => ({
       completeness: c.completeness,
       count: parseInt(c.count),
@@ -395,6 +391,117 @@ export async function getDomainCompleteness(domainId: string): Promise<DomainCom
     'SELECT * FROM fimbria.domain_completeness WHERE target_id = $1',
     [target.id]
   );
+}
+
+export async function getPocketSignature(domainId: string): Promise<PocketSignature | null> {
+  const target = await queryOne<{ id: number }>(
+    'SELECT id FROM fimbria.targets WHERE domain_id = $1',
+    [domainId]
+  );
+  if (!target) return null;
+  return queryOne<PocketSignature>(
+    'SELECT target_id, nte_start, nte_end, nte_sequence, donor_positions, pocket_residues, pocket_length, spacing_pattern, is_alternating, pct_hydrophobic FROM fimbria.pocket_signatures WHERE target_id = $1',
+    [target.id]
+  );
+}
+
+export async function getReclassificationProposal(domainId: string): Promise<ReclassificationProposal | null> {
+  const target = await queryOne<{ id: number }>(
+    'SELECT id FROM fimbria.targets WHERE domain_id = $1',
+    [domainId]
+  );
+  if (!target) return null;
+  return queryOne<ReclassificationProposal>(
+    'SELECT target_id, current_fgroup, proposed_fgroup, pocket_score, matched_domain_id, dali_zscore, dali_rmsd, dali_nalign, confidence, evidence_summary FROM fimbria.reclassification_proposals WHERE target_id = $1',
+    [target.id]
+  );
+}
+
+export async function getFamilies(): Promise<FamilyRow[]> {
+  const rows = await query<{
+    f_group: string; total: string; dsc: string; self_comp: string; complete: string;
+    avg_delta: string; avg_iptm: string;
+  }>(
+    `SELECT t.f_group,
+            COUNT(*)::text as total,
+            SUM(CASE WHEN dc.completeness = 'donor_strand_dependent' THEN 1 ELSE 0 END)::text as dsc,
+            SUM(CASE WHEN dc.completeness = 'self_complemented' THEN 1 ELSE 0 END)::text as self_comp,
+            SUM(CASE WHEN dc.completeness = 'complete' THEN 1 ELSE 0 END)::text as complete,
+            ROUND(AVG(r.delta_mean_plddt)::numeric, 1)::text as avg_delta,
+            ROUND(AVG(p.iptm)::numeric, 3)::text as avg_iptm
+     FROM fimbria.targets t
+     JOIN fimbria.domain_completeness dc ON t.id = dc.target_id
+     JOIN fimbria.rescue_analysis r ON t.id = r.target_id AND r.seq_type = 'domain'
+     JOIN fimbria.predictions p ON r.dimer_prediction_id = p.id
+     GROUP BY t.f_group
+     ORDER BY COUNT(*) DESC`
+  );
+
+  return rows.map((r) => {
+    const total = parseInt(r.total);
+    const dsc = parseInt(r.dsc);
+    const self_comp = parseInt(r.self_comp);
+    const complete = parseInt(r.complete);
+    return {
+      f_group: r.f_group,
+      total,
+      dsc,
+      self_comp,
+      complete,
+      pct_dsc: total > 0 ? Math.round((dsc / total) * 100) : 0,
+      pct_self: total > 0 ? Math.round((self_comp / total) * 100) : 0,
+      pct_complete: total > 0 ? Math.round((complete / total) * 100) : 0,
+      avg_iptm: parseFloat(r.avg_iptm) || 0,
+      avg_delta: parseFloat(r.avg_delta) || 0,
+    };
+  });
+}
+
+export async function getFamilyDetail(fgroup: string): Promise<{
+  members: RescueRow[];
+  pockets: (PocketSignature & { domain_id: string })[];
+  proposals: (ReclassificationProposal & { domain_id: string })[];
+}> {
+  const [members, pockets, proposals] = await Promise.all([
+    query<RescueRow>(
+      `SELECT t.domain_id, t.organism, t.f_group, t.pfam_acc, t.pfam_id, t.domain_length,
+              r.mono_mean_plddt, r.dimer_mean_plddt, r.delta_mean_plddt,
+              r.rescued_residues, r.rescue_class,
+              p.iptm, p.inter_chain_pae,
+              se.has_nte_to_body_dsc, se.nte_to_body_hbonds,
+              se.has_cterm_reciprocal, se.total_inter_hbonds,
+              dc.completeness, dc.complete_range, dc.donor_strand_range
+       FROM fimbria.targets t
+       JOIN fimbria.rescue_analysis r ON t.id = r.target_id AND r.seq_type = 'domain'
+       JOIN fimbria.predictions p ON r.dimer_prediction_id = p.id
+       LEFT JOIN fimbria.strand_exchange se ON se.prediction_id = p.id
+       LEFT JOIN fimbria.domain_completeness dc ON dc.target_id = t.id
+       WHERE t.f_group = $1
+       ORDER BY r.delta_mean_plddt DESC`,
+      [fgroup]
+    ),
+    query<PocketSignature & { domain_id: string }>(
+      `SELECT t.domain_id, ps.target_id, ps.nte_start, ps.nte_end, ps.nte_sequence,
+              ps.donor_positions, ps.pocket_residues, ps.pocket_length,
+              ps.spacing_pattern, ps.is_alternating, ps.pct_hydrophobic
+       FROM fimbria.pocket_signatures ps
+       JOIN fimbria.targets t ON ps.target_id = t.id
+       WHERE t.f_group = $1
+       ORDER BY ps.pocket_residues`,
+      [fgroup]
+    ),
+    query<ReclassificationProposal & { domain_id: string }>(
+      `SELECT t.domain_id, rp.target_id, rp.current_fgroup, rp.proposed_fgroup,
+              rp.pocket_score, rp.matched_domain_id, rp.dali_zscore, rp.dali_rmsd,
+              rp.dali_nalign, rp.confidence, rp.evidence_summary
+       FROM fimbria.reclassification_proposals rp
+       JOIN fimbria.targets t ON rp.target_id = t.id
+       WHERE rp.proposed_fgroup = $1`,
+      [fgroup]
+    ),
+  ]);
+
+  return { members, pockets, proposals };
 }
 
 export async function getLiterature(): Promise<LiteratureEntry[]> {

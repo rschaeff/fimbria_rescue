@@ -1,22 +1,18 @@
 import Link from 'next/link';
+import dynamic from 'next/dynamic';
 import { getStats } from '@/lib/queries';
 
-const RESCUE_CLASS_COLORS: Record<string, string> = {
-  strong: 'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300',
-  moderate: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/50 dark:text-yellow-300',
-  confident_dimer: 'bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-300',
-  weak: 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300',
-  no_interaction: 'bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-300',
-};
+const CompletenessDonut = dynamic(() => import('@/components/landing/CompletenessDonut'), {
+  ssr: false,
+  loading: () => <div className="h-[180px] w-[300px] bg-gray-100 dark:bg-gray-800 rounded-lg animate-pulse" />,
+});
 
 export default async function HomePage() {
   const stats = await getStats();
 
-  const rescueTotal = stats.rescue_classes.reduce((sum, r) => sum + r.count, 0);
-
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-      <div className="text-center mb-12">
+      <div className="text-center mb-10">
         <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-4">
           Fimbrial Domain Rescue Browser
         </h1>
@@ -28,105 +24,69 @@ export default async function HomePage() {
         </p>
       </div>
 
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-6 mb-12">
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6 text-center">
-          <div className="text-3xl font-bold text-blue-600 dark:text-blue-400">
-            {stats.total_targets}
+      {/* Headline stats + donut */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-10">
+        <div className="grid grid-cols-2 gap-4">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6 text-center">
+            <div className="text-3xl font-bold text-blue-600 dark:text-blue-400">{stats.total_domains}</div>
+            <div className="text-sm text-gray-500 dark:text-gray-400 mt-1">Domains Analyzed</div>
           </div>
-          <div className="text-sm text-gray-500 dark:text-gray-400 mt-1">Total Targets</div>
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6 text-center">
+            <div className="text-3xl font-bold text-blue-600 dark:text-blue-400">{stats.total_hbonds.toLocaleString()}</div>
+            <div className="text-sm text-gray-500 dark:text-gray-400 mt-1">Inter-chain H-bonds</div>
+          </div>
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6 text-center">
+            <div className="text-3xl font-bold text-orange-600 dark:text-orange-400">{stats.dsc_count}</div>
+            <div className="text-sm text-gray-500 dark:text-gray-400 mt-1">DSC Detected</div>
+          </div>
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6 text-center">
+            <div className="text-3xl font-bold text-teal-600 dark:text-teal-400">{stats.confident_dimers}</div>
+            <div className="text-sm text-gray-500 dark:text-gray-400 mt-1">Confident Dimers</div>
+          </div>
         </div>
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6 text-center">
-          <div className="text-3xl font-bold text-blue-600 dark:text-blue-400">
-            {stats.completed_predictions}
+
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6 flex items-center justify-center">
+          <div>
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-3">Domain Completeness</h2>
+            <CompletenessDonut classes={stats.completeness_classes} />
           </div>
-          <div className="text-sm text-gray-500 dark:text-gray-400 mt-1">Completed Predictions</div>
-        </div>
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6 text-center">
-          <div className="text-3xl font-bold text-blue-600 dark:text-blue-400">
-            {rescueTotal}
-          </div>
-          <div className="text-sm text-gray-500 dark:text-gray-400 mt-1">Rescue Analyses</div>
-        </div>
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6 text-center">
-          <div className="text-3xl font-bold text-green-600 dark:text-green-400">
-            {stats.dsc_count}
-          </div>
-          <div className="text-sm text-gray-500 dark:text-gray-400 mt-1">DSC Detected</div>
-        </div>
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6 text-center">
-          <div className="text-3xl font-bold text-green-600 dark:text-green-400">
-            {stats.reciprocal_count}
-          </div>
-          <div className="text-sm text-gray-500 dark:text-gray-400 mt-1">C-term Reciprocal</div>
         </div>
       </div>
 
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6 mb-12">
-        <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
-          Rescue Classification
-        </h2>
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
-          {stats.rescue_classes
-            .sort((a, b) => b.count - a.count)
-            .map((rc) => (
-              <div key={rc.rescue_class} className="text-center">
-                <span
-                  className={`inline-block px-3 py-1 rounded-full text-xs font-medium ${
-                    RESCUE_CLASS_COLORS[rc.rescue_class] || 'bg-gray-100 text-gray-800'
-                  }`}
-                >
-                  {rc.rescue_class.replace('_', ' ')}
-                </span>
-                <div className="text-2xl font-bold text-gray-900 dark:text-white mt-2">
-                  {rc.count}
-                </div>
-              </div>
-            ))}
-        </div>
-      </div>
-
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6 mb-12">
-        <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
-          Domain Completeness
-        </h2>
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-          {stats.completeness_classes
-            .sort((a, b) => b.count - a.count)
-            .map((cc) => (
-              <div key={cc.completeness} className="text-center">
-                <span
-                  className={`inline-block px-3 py-1 rounded-full text-xs font-medium ${
-                    cc.completeness === 'donor_strand_dependent'
-                      ? 'bg-orange-100 text-orange-800 dark:bg-orange-900/50 dark:text-orange-300'
-                      : cc.completeness === 'self_complemented'
-                        ? 'bg-teal-100 text-teal-800 dark:bg-teal-900/50 dark:text-teal-300'
-                        : cc.completeness === 'complete'
-                          ? 'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300'
-                          : 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300'
-                  }`}
-                >
-                  {cc.completeness.replace(/_/g, ' ')}
-                </span>
-                <div className="text-2xl font-bold text-gray-900 dark:text-white mt-2">
-                  {cc.count}
-                </div>
-              </div>
-            ))}
-        </div>
-      </div>
-
-      <div className="flex flex-col sm:flex-row gap-4 justify-center">
+      {/* Navigation cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
         <Link
           href="/rescue"
-          className="inline-flex items-center justify-center px-6 py-3 rounded-lg bg-blue-600 text-white font-medium hover:bg-blue-700 transition-colors"
+          className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6 hover:border-blue-400 dark:hover:border-blue-500 transition-colors group"
         >
-          Browse Rescue Results
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 mb-2">
+            Browse Domains
+          </h3>
+          <p className="text-sm text-gray-500 dark:text-gray-400">
+            Sortable, filterable table of all rescue analysis results with completeness and H-bond data.
+          </p>
+        </Link>
+        <Link
+          href="/families"
+          className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6 hover:border-blue-400 dark:hover:border-blue-500 transition-colors group"
+        >
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 mb-2">
+            Family Classification
+          </h3>
+          <p className="text-sm text-gray-500 dark:text-gray-400">
+            Completeness breakdown by ECOD F-group with pocket signatures and reclassification proposals.
+          </p>
         </Link>
         <Link
           href="/literature"
-          className="inline-flex items-center justify-center px-6 py-3 rounded-lg border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 font-medium hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+          className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6 hover:border-blue-400 dark:hover:border-blue-500 transition-colors group"
         >
-          View Literature
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 mb-2">
+            Literature
+          </h3>
+          <p className="text-sm text-gray-500 dark:text-gray-400">
+            Related papers on chaperone/usher pathway fimbriae and donor strand complementation.
+          </p>
         </Link>
       </div>
     </div>

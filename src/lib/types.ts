@@ -196,13 +196,50 @@ export interface DomainDetail {
   dimer: Prediction;
 }
 
+export interface PocketSignature {
+  target_id: number;
+  nte_start: number;
+  nte_end: number;
+  nte_sequence: string;
+  donor_positions: number[];
+  pocket_residues: string;
+  pocket_length: number;
+  spacing_pattern: number[];
+  is_alternating: boolean;
+  pct_hydrophobic: number;
+}
+
+export interface ReclassificationProposal {
+  target_id: number;
+  current_fgroup: string | null;
+  proposed_fgroup: string;
+  pocket_score: number | null;
+  matched_domain_id: string | null;
+  dali_zscore: number | null;
+  dali_rmsd: number | null;
+  dali_nalign: number | null;
+  confidence: 'strong' | 'moderate' | 'weak';
+  evidence_summary: string | null;
+}
+
+export interface FamilyRow {
+  f_group: string;
+  total: number;
+  dsc: number;
+  self_comp: number;
+  complete: number;
+  pct_dsc: number;
+  pct_self: number;
+  pct_complete: number;
+  avg_iptm: number;
+  avg_delta: number;
+}
+
 export interface StatsData {
-  total_targets: number;
-  total_predictions: number;
-  completed_predictions: number;
-  rescue_classes: { rescue_class: string; count: number }[];
+  total_domains: number;
+  total_hbonds: number;
+  confident_dimers: number;
   dsc_count: number;
-  reciprocal_count: number;
   completeness_classes: { completeness: string; count: number }[];
 }
 

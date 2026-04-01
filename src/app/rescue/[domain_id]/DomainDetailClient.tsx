@@ -10,7 +10,9 @@ import HbondTable from '@/components/rescue/HbondTable';
 import CompletenessCard from '@/components/rescue/CompletenessCard';
 import CompletenessBadge from '@/components/rescue/CompletenessBadge';
 import ProteinComparisonCard from '@/components/rescue/ProteinComparisonCard';
-import type { DomainDetail, ResiduePlddt, SequenceData, StructurePath, StrandExchange, InterChainHbond, DomainCompleteness, ProteinDomainComparison, ProteinInfo } from '@/lib/types';
+import PocketSignatureCard from '@/components/rescue/PocketSignatureCard';
+import ReclassificationCard from '@/components/rescue/ReclassificationCard';
+import type { DomainDetail, ResiduePlddt, SequenceData, StructurePath, StrandExchange, InterChainHbond, DomainCompleteness, ProteinDomainComparison, ProteinInfo, PocketSignature, ReclassificationProposal } from '@/lib/types';
 
 const PlddtChart = dynamic(() => import('@/components/rescue/PlddtChart'), {
   ssr: false,
@@ -35,6 +37,8 @@ interface Props {
     protein: ProteinInfo;
     proteinPlddts: { monomer: ResiduePlddt[]; dimer: ResiduePlddt[] };
   } | null;
+  pocket: PocketSignature | null;
+  reclassification: ReclassificationProposal | null;
 }
 
 function DownloadIcon() {
@@ -45,7 +49,7 @@ function DownloadIcon() {
   );
 }
 
-export default function DomainDetailClient({ detail, plddts, sequences, structures, exchange, hbonds, completeness, proteinComparison }: Props) {
+export default function DomainDetailClient({ detail, plddts, sequences, structures, exchange, hbonds, completeness, proteinComparison, pocket, reclassification }: Props) {
   const { target, rescue, monomer, dimer } = detail;
   const domainSeq = sequences.find((s) => s.seq_type === 'domain');
 
@@ -201,6 +205,28 @@ export default function DomainDetailClient({ detail, plddts, sequences, structur
             monomerPlddts={plddts.monomer}
             dimerPlddts={plddts.dimer}
           />
+        </div>
+      )}
+
+      {/* Pocket + Reclassification side-by-side */}
+      {(pocket || reclassification) && (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+          {pocket && (
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-5">
+              <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-3">
+                Pocket Signature
+              </h2>
+              <PocketSignatureCard pocket={pocket} />
+            </div>
+          )}
+          {reclassification && (
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-5">
+              <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-3">
+                Reclassification Proposal
+              </h2>
+              <ReclassificationCard proposal={reclassification} />
+            </div>
+          )}
         </div>
       )}
 
