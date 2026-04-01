@@ -13,7 +13,7 @@ interface StructureViewerProps {
 export default function StructureViewer({ domainId, structures }: StructureViewerProps) {
   const viewerRef = useRef<HTMLDivElement>(null);
   const viewerInstance = useRef<any>(null);
-  const [mode, setMode] = useState<'monomer_domain' | 'dimer_domain'>('dimer_domain');
+  const [mode, setMode] = useState<string>('dimer_domain');
   const [showChainB, setShowChainB] = useState(true);
   const [loaded, setLoaded] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -83,7 +83,8 @@ export default function StructureViewer({ domainId, structures }: StructureViewe
           }
         };
 
-        if (mode === 'dimer_domain') {
+        const isDimer = mode === 'dimer_domain' || mode === 'dimer_protein';
+        if (isDimer) {
           v.setStyle({ chain: 'A' }, { cartoon: { colorfunc: plddtColor } });
           if (showChainB) {
             v.setStyle({ chain: 'B' }, { cartoon: { color: '#d1d5db', opacity: 0.6 } });
@@ -116,13 +117,15 @@ export default function StructureViewer({ domainId, structures }: StructureViewe
       <div className="flex items-center gap-4 mb-4">
         <select
           value={mode}
-          onChange={(e) => setMode(e.target.value as typeof mode)}
+          onChange={(e) => setMode(e.target.value)}
           className="rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 px-3 py-2 text-sm"
         >
-          <option value="monomer_domain">Monomer</option>
-          <option value="dimer_domain">Dimer</option>
+          {structures.find((s) => s.mode === 'monomer_domain') && <option value="monomer_domain">Monomer Domain</option>}
+          {structures.find((s) => s.mode === 'dimer_domain') && <option value="dimer_domain">Dimer Domain</option>}
+          {structures.find((s) => s.mode === 'monomer_protein') && <option value="monomer_protein">Monomer Protein</option>}
+          {structures.find((s) => s.mode === 'dimer_protein') && <option value="dimer_protein">Dimer Protein</option>}
         </select>
-        {mode === 'dimer_domain' && (
+        {(mode === 'dimer_domain' || mode === 'dimer_protein') && (
           <label className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
             <input
               type="checkbox"

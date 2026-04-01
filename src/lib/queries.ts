@@ -284,13 +284,26 @@ export async function getStructurePaths(domainId: string): Promise<StructurePath
 
   if (!target) return [];
 
-  return query<StructurePath>(
+  // Domain-level structures (linked by target_id)
+  const domainStructures = await query<StructurePath>(
     `SELECT s.file_path, s.structure_type, p.mode
      FROM fimbria.structures s
      JOIN fimbria.predictions p ON s.prediction_id = p.id
      WHERE p.target_id = $1`,
     [target.id]
   );
+
+  // Protein-level structures (linked through protein_domain_comparison)
+  const proteinStructures = await query<StructurePath>(
+    `SELECT DISTINCT s.file_path, s.structure_type, p.mode
+     FROM fimbria.protein_domain_comparison pdc
+     JOIN fimbria.predictions p ON p.id IN (pdc.monomer_protein_pred_id, pdc.dimer_protein_pred_id)
+     JOIN fimbria.structures s ON s.prediction_id = p.id
+     WHERE pdc.target_id = $1`,
+    [target.id]
+  );
+
+  return [...domainStructures, ...proteinStructures];
 }
 
 export async function getStrandExchange(domainId: string): Promise<StrandExchange | null> {

@@ -103,21 +103,29 @@ export default function DomainDetailClient({ detail, plddts, sequences, structur
           <div className="flex items-center justify-between mb-3">
             <h2 className="text-lg font-semibold text-gray-900 dark:text-white">3D Structure</h2>
             {structures.length > 0 && (
-              <div className="flex items-center gap-3 text-xs">
+              <div className="flex items-center gap-3 text-xs flex-wrap">
                 {structures.find((s) => s.mode === 'monomer_domain') && (
-                  <a
-                    href={`/api/rescue/${target.domain_id}/structure/monomer_domain?download`}
-                    className="inline-flex items-center gap-1 text-gray-500 hover:text-blue-600 dark:text-gray-400 dark:hover:text-blue-400"
-                  >
-                    <DownloadIcon /> Monomer CIF
+                  <a href={`/api/rescue/${target.domain_id}/structure/monomer_domain?download`}
+                    className="inline-flex items-center gap-1 text-gray-500 hover:text-blue-600 dark:text-gray-400 dark:hover:text-blue-400">
+                    <DownloadIcon /> Mono Domain
                   </a>
                 )}
                 {structures.find((s) => s.mode === 'dimer_domain') && (
-                  <a
-                    href={`/api/rescue/${target.domain_id}/structure/dimer_domain?download`}
-                    className="inline-flex items-center gap-1 text-gray-500 hover:text-blue-600 dark:text-gray-400 dark:hover:text-blue-400"
-                  >
-                    <DownloadIcon /> Dimer CIF
+                  <a href={`/api/rescue/${target.domain_id}/structure/dimer_domain?download`}
+                    className="inline-flex items-center gap-1 text-gray-500 hover:text-blue-600 dark:text-gray-400 dark:hover:text-blue-400">
+                    <DownloadIcon /> Dimer Domain
+                  </a>
+                )}
+                {structures.find((s) => s.mode === 'monomer_protein') && (
+                  <a href={`/api/rescue/${target.domain_id}/structure/monomer_protein?download`}
+                    className="inline-flex items-center gap-1 text-gray-500 hover:text-blue-600 dark:text-gray-400 dark:hover:text-blue-400">
+                    <DownloadIcon /> Mono Protein
+                  </a>
+                )}
+                {structures.find((s) => s.mode === 'dimer_protein') && (
+                  <a href={`/api/rescue/${target.domain_id}/structure/dimer_protein?download`}
+                    className="inline-flex items-center gap-1 text-gray-500 hover:text-blue-600 dark:text-gray-400 dark:hover:text-blue-400">
+                    <DownloadIcon /> Dimer Protein
                   </a>
                 )}
               </div>
