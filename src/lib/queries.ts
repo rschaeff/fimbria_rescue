@@ -18,10 +18,12 @@ import type {
   PocketSignature,
   ReclassificationProposal,
   FamilyRow,
+  HeterodimerRow,
+  HeterodimerHbond,
 } from './types';
 
 export async function getStats(): Promise<StatsData> {
-  const [domains, totalHbonds, dscCount, confidentDimers, completenessClasses] = await Promise.all([
+  const [domains, totalHbonds, dscCount, confidentDimers, completenessClasses, hetTotal, hetConfident] = await Promise.all([
     queryOne<{ count: string }>("SELECT COUNT(*)::text as count FROM fimbria.targets WHERE batch != 'controls'"),
     queryOne<{ sum: string }>('SELECT COALESCE(SUM(total_inter_hbonds), 0)::text as sum FROM fimbria.strand_exchange'),
     queryOne<{ count: string }>('SELECT COUNT(*)::text as count FROM fimbria.strand_exchange WHERE has_nte_to_body_dsc = true'),
@@ -31,6 +33,8 @@ export async function getStats(): Promise<StatsData> {
     query<{ completeness: string; count: string }>(
       'SELECT completeness, COUNT(*)::text as count FROM fimbria.domain_completeness GROUP BY completeness'
     ),
+    queryOne<{ count: string }>('SELECT COUNT(*)::text as count FROM fimbria.heterodimer_predictions WHERE completed = true'),
+    queryOne<{ count: string }>('SELECT COUNT(*)::text as count FROM fimbria.heterodimer_predictions WHERE iptm > 0.3'),
   ]);
 
   return {
@@ -42,6 +46,8 @@ export async function getStats(): Promise<StatsData> {
       completeness: c.completeness,
       count: parseInt(c.count),
     })),
+    heterodimer_total: parseInt(hetTotal?.count || '0'),
+    heterodimer_confident: parseInt(hetConfident?.count || '0'),
   };
 }
 
@@ -515,6 +521,79 @@ export async function getFamilyDetail(fgroup: string): Promise<{
   ]);
 
   return { members, pockets, proposals };
+}
+
+export async function getHeterodimers(): Promise<HeterodimerRow[]> {
+  return query<HeterodimerRow>(
+    `SELECT hp.id, hp.pair_name, hp.iptm, hp.inter_chain_pae,
+            hp.pae_a_to_b, hp.pae_b_to_a, hp.chain_a_ptm, hp.chain_b_ptm,
+            hp.ranking_score, hp.priority, hp.model_cif_path,
+            he.exchange_type, he.a_to_b_hbonds, he.b_to_a_hbonds,
+            he.total_inter_hbonds, he.evidence_summary,
+            ta.domain_id as domain_a, ta.organism, ta.f_group as fg_a,
+            dca.completeness as comp_a,
+            tb.domain_id as domain_b, tb.f_group as fg_b,
+            dcb.completeness as comp_b,
+            CASE
+              WHEN he.exchange_type != 'none' THEN 'DSC'
+              WHEN hp.iptm > 0.3 AND he.exchange_type = 'none' THEN 'Lateral'
+              ELSE 'None'
+            END as assembly_mode
+     FROM fimbria.heterodimer_predictions hp
+     JOIN fimbria.heterodimer_exchange he ON hp.id = he.prediction_id
+     JOIN fimbria.targets ta ON hp.target_a_id = ta.id
+     JOIN fimbria.targets tb ON hp.target_b_id = tb.id
+     LEFT JOIN fimbria.domain_completeness dca ON ta.id = dca.target_id
+     LEFT JOIN fimbria.domain_completeness dcb ON tb.id = dcb.target_id
+     WHERE hp.completed = true
+     ORDER BY hp.iptm DESC`
+  );
+}
+
+export async function getHeterodimerHbonds(pairId: number): Promise<HeterodimerHbond[]> {
+  return query<HeterodimerHbond>(
+    `SELECT hh.donor_chain, hh.donor_res, hh.donor_name,
+            hh.acceptor_chain, hh.acceptor_res, hh.acceptor_name,
+            hh.no_distance, hh.interaction_type
+     FROM fimbria.heterodimer_hbonds hh
+     WHERE hh.prediction_id = $1
+     ORDER BY hh.donor_chain, hh.donor_res`,
+    [pairId]
+  );
+}
+
+export async function getHeterodimersForDomain(domainId: string): Promise<HeterodimerRow[]> {
+  const target = await queryOne<{ id: number }>(
+    'SELECT id FROM fimbria.targets WHERE domain_id = $1',
+    [domainId]
+  );
+  if (!target) return [];
+
+  return query<HeterodimerRow>(
+    `SELECT hp.id, hp.pair_name, hp.iptm, hp.inter_chain_pae,
+            hp.pae_a_to_b, hp.pae_b_to_a, hp.chain_a_ptm, hp.chain_b_ptm,
+            hp.ranking_score, hp.priority, hp.model_cif_path,
+            he.exchange_type, he.a_to_b_hbonds, he.b_to_a_hbonds,
+            he.total_inter_hbonds, he.evidence_summary,
+            ta.domain_id as domain_a, ta.organism, ta.f_group as fg_a,
+            dca.completeness as comp_a,
+            tb.domain_id as domain_b, tb.f_group as fg_b,
+            dcb.completeness as comp_b,
+            CASE
+              WHEN he.exchange_type != 'none' THEN 'DSC'
+              WHEN hp.iptm > 0.3 AND he.exchange_type = 'none' THEN 'Lateral'
+              ELSE 'None'
+            END as assembly_mode
+     FROM fimbria.heterodimer_predictions hp
+     JOIN fimbria.heterodimer_exchange he ON hp.id = he.prediction_id
+     JOIN fimbria.targets ta ON hp.target_a_id = ta.id
+     JOIN fimbria.targets tb ON hp.target_b_id = tb.id
+     LEFT JOIN fimbria.domain_completeness dca ON ta.id = dca.target_id
+     LEFT JOIN fimbria.domain_completeness dcb ON tb.id = dcb.target_id
+     WHERE (hp.target_a_id = $1 OR hp.target_b_id = $1) AND hp.completed = true
+     ORDER BY hp.iptm DESC`,
+    [target.id]
+  );
 }
 
 export async function getLiterature(): Promise<LiteratureEntry[]> {

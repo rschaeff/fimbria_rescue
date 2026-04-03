@@ -12,7 +12,8 @@ import CompletenessBadge from '@/components/rescue/CompletenessBadge';
 import ProteinComparisonCard from '@/components/rescue/ProteinComparisonCard';
 import PocketSignatureCard from '@/components/rescue/PocketSignatureCard';
 import ReclassificationCard from '@/components/rescue/ReclassificationCard';
-import type { DomainDetail, ResiduePlddt, SequenceData, StructurePath, StrandExchange, InterChainHbond, DomainCompleteness, ProteinDomainComparison, ProteinInfo, PocketSignature, ReclassificationProposal } from '@/lib/types';
+import HeterodimerTable from '@/components/heterodimers/HeterodimerTable';
+import type { DomainDetail, ResiduePlddt, SequenceData, StructurePath, StrandExchange, InterChainHbond, DomainCompleteness, ProteinDomainComparison, ProteinInfo, PocketSignature, ReclassificationProposal, HeterodimerRow } from '@/lib/types';
 
 const PlddtChart = dynamic(() => import('@/components/rescue/PlddtChart'), {
   ssr: false,
@@ -39,6 +40,7 @@ interface Props {
   } | null;
   pocket: PocketSignature | null;
   reclassification: ReclassificationProposal | null;
+  heterodimers: HeterodimerRow[];
 }
 
 function DownloadIcon() {
@@ -49,7 +51,7 @@ function DownloadIcon() {
   );
 }
 
-export default function DomainDetailClient({ detail, plddts, sequences, structures, exchange, hbonds, completeness, proteinComparison, pocket, reclassification }: Props) {
+export default function DomainDetailClient({ detail, plddts, sequences, structures, exchange, hbonds, completeness, proteinComparison, pocket, reclassification, heterodimers }: Props) {
   const { target, rescue, monomer, dimer } = detail;
   const domainSeq = sequences.find((s) => s.seq_type === 'domain');
 
@@ -250,6 +252,16 @@ export default function DomainDetailClient({ detail, plddts, sequences, structur
             proteinPlddts={proteinComparison.proteinPlddts}
             domainRange={target.domain_range}
           />
+        </div>
+      )}
+
+      {/* Heterodimer Interactions */}
+      {heterodimers.length > 0 && (
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-5 mb-6">
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-3">
+            Heterodimer Interactions ({heterodimers.length})
+          </h2>
+          <HeterodimerTable rows={heterodimers} showFilters={false} />
         </div>
       )}
     </div>

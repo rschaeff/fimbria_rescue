@@ -21,7 +21,7 @@ export default async function HomePage() {
 
       {/* Headline stats + donut */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-10">
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
           <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6 text-center">
             <div className="text-3xl font-bold text-blue-600 dark:text-blue-400">{stats.total_domains}</div>
             <div className="text-sm text-gray-500 dark:text-gray-400 mt-1">Domains Analyzed</div>
@@ -38,6 +38,14 @@ export default async function HomePage() {
             <div className="text-3xl font-bold text-teal-600 dark:text-teal-400">{stats.confident_dimers}</div>
             <div className="text-sm text-gray-500 dark:text-gray-400 mt-1">Confident Dimers</div>
           </div>
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6 text-center">
+            <div className="text-3xl font-bold text-purple-600 dark:text-purple-400">{stats.heterodimer_total}</div>
+            <div className="text-sm text-gray-500 dark:text-gray-400 mt-1">Heterodimer Pairs</div>
+          </div>
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6 text-center">
+            <div className="text-3xl font-bold text-purple-600 dark:text-purple-400">{stats.heterodimer_confident}</div>
+            <div className="text-sm text-gray-500 dark:text-gray-400 mt-1">Confident Interactions</div>
+          </div>
         </div>
 
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6 flex items-center justify-center">
@@ -49,7 +57,7 @@ export default async function HomePage() {
       </div>
 
       {/* Navigation cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
         <Link
           href="/rescue"
           className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6 hover:border-blue-400 dark:hover:border-blue-500 transition-colors group"
@@ -70,6 +78,17 @@ export default async function HomePage() {
           </h3>
           <p className="text-sm text-gray-500 dark:text-gray-400">
             Completeness breakdown by ECOD F-group with pocket signatures and reclassification proposals.
+          </p>
+        </Link>
+        <Link
+          href="/heterodimers"
+          className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6 hover:border-blue-400 dark:hover:border-blue-500 transition-colors group"
+        >
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 mb-2">
+            Heterodimer Interactions
+          </h3>
+          <p className="text-sm text-gray-500 dark:text-gray-400">
+            Cross-domain dimer predictions testing DSC vs lateral packing assembly modes.
           </p>
         </Link>
         <Link

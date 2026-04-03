@@ -235,12 +235,52 @@ export interface FamilyRow {
   avg_delta: number;
 }
 
+export interface HeterodimerRow {
+  id: number;
+  pair_name: string;
+  domain_a: string;
+  domain_b: string;
+  organism: string;
+  fg_a: string;
+  fg_b: string;
+  comp_a: string;
+  comp_b: string;
+  priority: number;
+  iptm: number;
+  inter_chain_pae: number;
+  pae_a_to_b: number;
+  pae_b_to_a: number;
+  chain_a_ptm: number;
+  chain_b_ptm: number;
+  ranking_score: number;
+  exchange_type: string;
+  assembly_mode: string;
+  a_to_b_hbonds: number;
+  b_to_a_hbonds: number;
+  total_inter_hbonds: number;
+  evidence_summary: string | null;
+  model_cif_path: string | null;
+}
+
+export interface HeterodimerHbond {
+  donor_chain: string;
+  donor_res: number;
+  donor_name: string;
+  acceptor_chain: string;
+  acceptor_res: number;
+  acceptor_name: string;
+  no_distance: number;
+  interaction_type: string | null;
+}
+
 export interface StatsData {
   total_domains: number;
   total_hbonds: number;
   confident_dimers: number;
   dsc_count: number;
   completeness_classes: { completeness: string; count: number }[];
+  heterodimer_total: number;
+  heterodimer_confident: number;
 }
 
 export interface SequenceData {
