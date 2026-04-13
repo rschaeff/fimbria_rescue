@@ -136,7 +136,7 @@ export interface StrandExchange {
   cterm_donor_range: string | null;
   cterm_acceptor_range: string | null;
   num_strand_contacts: number;
-  strand_contact_details: string;
+  strand_contact_details: string | null;
 }
 
 export interface DomainCompleteness {

@@ -6,9 +6,11 @@ interface StrandExchangeCardProps {
   domainLength: number;
 }
 
-function parseCont(details: string): StrandContact[] {
+function parseCont(details: string | null): StrandContact[] {
+  if (!details) return [];
   try {
-    return JSON.parse(details) as StrandContact[];
+    const parsed = JSON.parse(details);
+    return Array.isArray(parsed) ? parsed : [];
   } catch {
     return [];
   }
