@@ -16,6 +16,7 @@ interface RescueFilters {
   delta_max?: number;
   completeness?: string;
   dsc?: string;
+  batch?: string;
 }
 
 interface RescueTableProps {
@@ -47,6 +48,7 @@ export default function RescueTable({
   const [deltaMax, setDeltaMax] = useState(initialFilters.delta_max?.toString() || '');
   const [completenessFilter, setCompletenessFilter] = useState(initialFilters.completeness || '');
   const [dsc, setDsc] = useState(initialFilters.dsc || '');
+  const [batch, setBatch] = useState(initialFilters.batch || '');
 
   const buildUrl = (overrides: Record<string, string | number | undefined>) => {
     const params = new URLSearchParams();
@@ -61,6 +63,7 @@ export default function RescueTable({
       delta_max: deltaMax || undefined,
       completeness: completenessFilter || undefined,
       dsc: dsc || undefined,
+      batch: batch || undefined,
       ...overrides,
     };
     for (const [k, v] of Object.entries(values)) {
@@ -94,7 +97,21 @@ export default function RescueTable({
     <div>
       {/* Filters */}
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-4 mb-6">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-7 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-8 gap-4">
+          <div>
+            <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">
+              Batch
+            </label>
+            <select
+              value={batch}
+              onChange={(e) => setBatch(e.target.value)}
+              className="w-full rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 px-3 py-2 text-sm"
+            >
+              <option value="">All</option>
+              <option value="bacterial">Bacterial</option>
+              <option value="archaeal">Archaeal</option>
+            </select>
+          </div>
           <div>
             <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">
               Rescue Class

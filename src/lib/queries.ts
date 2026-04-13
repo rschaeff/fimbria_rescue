@@ -23,7 +23,7 @@ import type {
 } from './types';
 
 export async function getStats(): Promise<StatsData> {
-  const [domains, totalHbonds, dscCount, confidentDimers, completenessClasses, hetTotal, hetConfident] = await Promise.all([
+  const [domains, totalHbonds, dscCount, confidentDimers, completenessClasses, hetTotal, hetConfident, bacterial, archaeal, batchBreakdown] = await Promise.all([
     queryOne<{ count: string }>("SELECT COUNT(*)::text as count FROM fimbria.targets WHERE batch != 'controls'"),
     queryOne<{ sum: string }>('SELECT COALESCE(SUM(total_inter_hbonds), 0)::text as sum FROM fimbria.strand_exchange'),
     queryOne<{ count: string }>('SELECT COUNT(*)::text as count FROM fimbria.strand_exchange WHERE has_nte_to_body_dsc = true'),
@@ -35,7 +35,23 @@ export async function getStats(): Promise<StatsData> {
     ),
     queryOne<{ count: string }>('SELECT COUNT(*)::text as count FROM fimbria.heterodimer_predictions WHERE completed = true'),
     queryOne<{ count: string }>('SELECT COUNT(*)::text as count FROM fimbria.heterodimer_predictions WHERE iptm > 0.3'),
+    queryOne<{ count: string }>("SELECT COUNT(*)::text as count FROM fimbria.targets WHERE batch = 'batch2'"),
+    queryOne<{ count: string }>("SELECT COUNT(*)::text as count FROM fimbria.targets WHERE batch = 'archaea'"),
+    query<{ batch: string; completeness: string; count: string }>(
+      `SELECT t.batch, dc.completeness, COUNT(*)::text as count
+       FROM fimbria.domain_completeness dc
+       JOIN fimbria.targets t ON dc.target_id = t.id
+       WHERE t.batch != 'controls'
+       GROUP BY t.batch, dc.completeness`
+    ),
   ]);
+
+  const bacterialCompleteness = batchBreakdown
+    .filter((r) => r.batch === 'batch2')
+    .map((r) => ({ completeness: r.completeness, count: parseInt(r.count) }));
+  const archaealCompleteness = batchBreakdown
+    .filter((r) => r.batch === 'archaea')
+    .map((r) => ({ completeness: r.completeness, count: parseInt(r.count) }));
 
   return {
     total_domains: parseInt(domains?.count || '0'),
@@ -48,6 +64,10 @@ export async function getStats(): Promise<StatsData> {
     })),
     heterodimer_total: parseInt(hetTotal?.count || '0'),
     heterodimer_confident: parseInt(hetConfident?.count || '0'),
+    bacterial_domains: parseInt(bacterial?.count || '0'),
+    archaeal_domains: parseInt(archaeal?.count || '0'),
+    bacterial_completeness: bacterialCompleteness,
+    archaeal_completeness: archaealCompleteness,
   };
 }
 
@@ -59,13 +79,20 @@ interface RescueFilters {
   delta_min?: number;
   delta_max?: number;
   dsc?: string;
+  batch?: string;
 }
 
 function buildRescueWhere(
   filters: RescueFilters,
   params: (string | number | boolean | null)[]
 ): string {
-  const conditions: string[] = ["r.seq_type = 'domain'"];
+  const conditions: string[] = ["r.seq_type = 'domain'", "t.batch != 'controls'"];
+
+  if (filters.batch === 'bacterial') {
+    conditions.push("t.batch = 'batch2'");
+  } else if (filters.batch === 'archaeal') {
+    conditions.push("t.batch = 'archaea'");
+  }
 
   if (filters.rescue_class) {
     params.push(filters.rescue_class);
@@ -593,6 +620,52 @@ export async function getHeterodimersForDomain(domainId: string): Promise<Hetero
      WHERE (hp.target_a_id = $1 OR hp.target_b_id = $1) AND hp.completed = true
      ORDER BY hp.iptm DESC`,
     [target.id]
+  );
+}
+
+export async function getArchaeaDomains(): Promise<RescueRow[]> {
+  return query<RescueRow>(
+    `SELECT t.domain_id, t.organism, t.f_group, t.pfam_acc, t.pfam_id, t.domain_length,
+            r.mono_mean_plddt, r.dimer_mean_plddt, r.delta_mean_plddt,
+            r.rescued_residues, r.rescue_class,
+            p.iptm, p.inter_chain_pae,
+            se.has_nte_to_body_dsc, se.nte_to_body_hbonds,
+            se.has_cterm_reciprocal, se.total_inter_hbonds,
+            dc.completeness, dc.complete_range, dc.donor_strand_range
+     FROM fimbria.targets t
+     JOIN fimbria.rescue_analysis r ON t.id = r.target_id AND r.seq_type = 'domain'
+     JOIN fimbria.predictions p ON r.dimer_prediction_id = p.id
+     LEFT JOIN fimbria.strand_exchange se ON se.prediction_id = p.id
+     LEFT JOIN fimbria.domain_completeness dc ON dc.target_id = t.id
+     WHERE t.batch = 'archaea'
+     ORDER BY r.delta_mean_plddt DESC`
+  );
+}
+
+export async function getArchaeaHeterodimers(): Promise<HeterodimerRow[]> {
+  return query<HeterodimerRow>(
+    `SELECT hp.id, hp.pair_name, hp.iptm, hp.inter_chain_pae,
+            hp.pae_a_to_b, hp.pae_b_to_a, hp.chain_a_ptm, hp.chain_b_ptm,
+            hp.ranking_score, hp.priority, hp.model_cif_path,
+            he.exchange_type, he.a_to_b_hbonds, he.b_to_a_hbonds,
+            he.total_inter_hbonds, he.evidence_summary,
+            ta.domain_id as domain_a, ta.organism, ta.f_group as fg_a,
+            dca.completeness as comp_a,
+            tb.domain_id as domain_b, tb.f_group as fg_b,
+            dcb.completeness as comp_b,
+            CASE
+              WHEN he.exchange_type != 'none' THEN 'DSC'
+              WHEN hp.iptm > 0.3 AND he.exchange_type = 'none' THEN 'Lateral'
+              ELSE 'None'
+            END as assembly_mode
+     FROM fimbria.heterodimer_predictions hp
+     JOIN fimbria.heterodimer_exchange he ON hp.id = he.prediction_id
+     JOIN fimbria.targets ta ON hp.target_a_id = ta.id
+     JOIN fimbria.targets tb ON hp.target_b_id = tb.id
+     LEFT JOIN fimbria.domain_completeness dca ON ta.id = dca.target_id
+     LEFT JOIN fimbria.domain_completeness dcb ON tb.id = dcb.target_id
+     WHERE hp.batch = 'archaea' AND hp.completed = true
+     ORDER BY hp.iptm DESC`
   );
 }
 

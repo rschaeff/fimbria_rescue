@@ -17,6 +17,7 @@ export async function GET(request: NextRequest) {
     delta_max: params.get('delta_max') ? parseFloat(params.get('delta_max')!) : undefined,
     completeness: params.get('completeness') || undefined,
     dsc: params.get('dsc') || undefined,
+    batch: params.get('batch') || undefined,
   };
 
   const cacheKey = `rescue-${JSON.stringify({ page, sortBy, sortDir, filters })}`;

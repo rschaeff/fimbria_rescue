@@ -19,6 +19,7 @@ export default async function RescuePage({ searchParams }: PageProps) {
     delta_max: params.delta_max ? parseFloat(params.delta_max as string) : undefined,
     completeness: (params.completeness as string) || undefined,
     dsc: (params.dsc as string) || undefined,
+    batch: (params.batch as string) || undefined,
   };
 
   const [rows, total] = await Promise.all([

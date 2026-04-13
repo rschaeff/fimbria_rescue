@@ -33,6 +33,7 @@ export async function GET(request: NextRequest) {
     delta_min: params.get('delta_min') ? parseFloat(params.get('delta_min')!) : undefined,
     delta_max: params.get('delta_max') ? parseFloat(params.get('delta_max')!) : undefined,
     dsc: params.get('dsc') || undefined,
+    batch: params.get('batch') || undefined,
   };
 
   try {

@@ -281,6 +281,10 @@ export interface StatsData {
   completeness_classes: { completeness: string; count: number }[];
   heterodimer_total: number;
   heterodimer_confident: number;
+  bacterial_domains: number;
+  archaeal_domains: number;
+  archaeal_completeness: { completeness: string; count: number }[];
+  bacterial_completeness: { completeness: string; count: number }[];
 }
 
 export interface SequenceData {

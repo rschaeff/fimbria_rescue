@@ -10,6 +10,7 @@ const navLinks = [
   { href: '/rescue', label: 'Domains' },
   { href: '/families', label: 'Families' },
   { href: '/heterodimers', label: 'Heterodimers' },
+  { href: '/archaea', label: 'Archaea' },
   { href: '/literature', label: 'Literature' },
 ];
 

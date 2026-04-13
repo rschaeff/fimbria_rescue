@@ -25,6 +25,7 @@ export default async function HomePage() {
           <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6 text-center">
             <div className="text-3xl font-bold text-blue-600 dark:text-blue-400">{stats.total_domains}</div>
             <div className="text-sm text-gray-500 dark:text-gray-400 mt-1">Domains Analyzed</div>
+            <div className="text-xs text-gray-400 mt-0.5">{stats.bacterial_domains} bacterial &middot; {stats.archaeal_domains} archaeal</div>
           </div>
           <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6 text-center">
             <div className="text-3xl font-bold text-blue-600 dark:text-blue-400">{stats.total_hbonds.toLocaleString()}</div>
@@ -48,16 +49,21 @@ export default async function HomePage() {
           </div>
         </div>
 
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6 flex items-center justify-center">
-          <div>
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-3">Domain Completeness</h2>
-            <CompletenessDonut classes={stats.completeness_classes} />
-          </div>
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-3">Domain Completeness</h2>
+          <div className="mb-2 text-xs text-gray-500 dark:text-gray-400">Bacterial ({stats.bacterial_domains})</div>
+          <CompletenessDonut classes={stats.bacterial_completeness} />
+          {stats.archaeal_domains > 0 && (
+            <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+              <div className="mb-2 text-xs text-gray-500 dark:text-gray-400">Archaeal ({stats.archaeal_domains})</div>
+              <CompletenessDonut classes={stats.archaeal_completeness} />
+            </div>
+          )}
         </div>
       </div>
 
       {/* Navigation cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6">
         <Link
           href="/rescue"
           className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6 hover:border-blue-400 dark:hover:border-blue-500 transition-colors group"
@@ -89,6 +95,17 @@ export default async function HomePage() {
           </h3>
           <p className="text-sm text-gray-500 dark:text-gray-400">
             Cross-domain dimer predictions testing DSC vs lateral packing assembly modes.
+          </p>
+        </Link>
+        <Link
+          href="/archaea"
+          className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6 hover:border-blue-400 dark:hover:border-blue-500 transition-colors group"
+        >
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 mb-2">
+            Archaeal Domains
+          </h3>
+          <p className="text-sm text-gray-500 dark:text-gray-400">
+            Cross-kingdom comparison: 16 archaeal Ig-like domains showing convergent donor strand complementation.
           </p>
         </Link>
         <Link
