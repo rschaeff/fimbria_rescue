@@ -23,8 +23,8 @@ export default function FamilyBarChart({ families }: FamilyBarChartProps) {
       name: f.f_group.length > 12 ? f.f_group.slice(0, 12) + '...' : f.f_group,
       fullName: f.f_group,
       DSC: f.dsc,
-      Self: f.self_comp,
-      Complete: f.complete,
+      'Prob. Dimer': f.probable_dimer,
+      'Prob. Monomer': f.probable_monomer,
     }));
 
   return (
@@ -46,8 +46,8 @@ export default function FamilyBarChart({ families }: FamilyBarChartProps) {
         />
         <Legend verticalAlign="top" />
         <Bar dataKey="DSC" stackId="a" fill="#f97316" />
-        <Bar dataKey="Self" stackId="a" fill="#0d9488" />
-        <Bar dataKey="Complete" stackId="a" fill="#22c55e" />
+        <Bar dataKey="Prob. Dimer" stackId="a" fill="#3b82f6" />
+        <Bar dataKey="Prob. Monomer" stackId="a" fill="#22c55e" />
       </BarChart>
     </ResponsiveContainer>
   );

@@ -2,7 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getRescueAll } from '@/lib/queries';
 
 const CSV_COLUMNS = [
-  'domain_id', 'organism', 'f_group', 'pfam_acc', 'pfam_id', 'domain_length',
+  'domain_id', 'organism', 'f_group', 'pfam_acc', 'pfam_id', 'pfam_description',
+  'clan_acc', 'clan_name', 'domain_length',
   'mono_mean_plddt', 'dimer_mean_plddt', 'delta_mean_plddt',
   'rescued_residues', 'rescue_class',
   'iptm', 'inter_chain_pae',

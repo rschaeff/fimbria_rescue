@@ -12,6 +12,9 @@ export interface Target {
   f_group: string;
   pfam_acc: string | null;
   pfam_id: string | null;
+  pfam_description: string | null;
+  clan_acc: string | null;
+  clan_name: string | null;
   t_group: string;
   ecod_status: string;
   batch: string;
@@ -87,6 +90,9 @@ export interface RescueRow {
   f_group: string;
   pfam_acc: string | null;
   pfam_id: string | null;
+  pfam_description: string | null;
+  clan_acc: string | null;
+  clan_name: string | null;
   domain_length: number;
   mono_mean_plddt: number;
   dimer_mean_plddt: number;
@@ -152,7 +158,7 @@ export interface DomainCompleteness {
   cterm_donor_range: string | null;
   cterm_acceptor_range: string | null;
   complete_range: string | null;
-  completeness: 'complete' | 'self_complemented' | 'donor_strand_dependent' | 'unknown';
+  completeness: 'probable_monomer' | 'probable_dimer' | 'donor_strand_dependent' | 'unknown';
   evidence_summary: string;
   curator_reviewed: boolean;
   curator_notes: string | null;
@@ -226,11 +232,11 @@ export interface FamilyRow {
   f_group: string;
   total: number;
   dsc: number;
-  self_comp: number;
-  complete: number;
+  probable_dimer: number;
+  probable_monomer: number;
   pct_dsc: number;
-  pct_self: number;
-  pct_complete: number;
+  pct_probable_dimer: number;
+  pct_probable_monomer: number;
   avg_iptm: number;
   avg_delta: number;
 }
@@ -271,6 +277,31 @@ export interface HeterodimerHbond {
   acceptor_name: string;
   no_distance: number;
   interaction_type: string | null;
+}
+
+export interface PfamClanRow {
+  pfam_acc: string;
+  pfam_short_name: string;
+  pfam_description: string | null;
+  clan_acc: string;
+  clan_name: string;
+  ecod_fgroups: string | null;
+  fimbria_domain_count: number;
+  dsc: number;
+  probable_dimer: number;
+  probable_monomer: number;
+  has_fgroup_mapping: boolean;
+  out_of_tgroup: boolean;
+}
+
+export interface PfamClanDisagreement {
+  type: 'no_fgroup' | 'out_of_tgroup' | 'sparse_coverage';
+  pfam_acc: string;
+  pfam_short_name: string;
+  pfam_description: string | null;
+  out_of_tgroup_fgroup: string | null;
+  fimbria_count: number;
+  proposed_action: string;
 }
 
 export interface StatsData {

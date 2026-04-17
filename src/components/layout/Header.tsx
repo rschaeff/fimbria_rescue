@@ -9,6 +9,7 @@ const navLinks = [
   { href: '/', label: 'Home' },
   { href: '/rescue', label: 'Domains' },
   { href: '/families', label: 'Families' },
+  { href: '/pfam-clan', label: 'Pfam Clan' },
   { href: '/heterodimers', label: 'Heterodimers' },
   { href: '/archaea', label: 'Archaea' },
   { href: '/literature', label: 'Literature' },

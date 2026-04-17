@@ -22,8 +22,8 @@ export default async function FgroupDetailPage({ params }: PageProps) {
   if (members.length === 0) notFound();
 
   const dsc = members.filter((m) => m.completeness === 'donor_strand_dependent').length;
-  const self = members.filter((m) => m.completeness === 'self_complemented').length;
-  const complete = members.filter((m) => m.completeness === 'complete').length;
+  const probableDimer = members.filter((m) => m.completeness === 'probable_dimer').length;
+  const probableMonomer = members.filter((m) => m.completeness === 'probable_monomer').length;
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -38,8 +38,8 @@ export default async function FgroupDetailPage({ params }: PageProps) {
         <div className="flex flex-wrap gap-4 text-sm text-gray-600 dark:text-gray-400">
           <span>{members.length} domains</span>
           <span className="text-orange-600 dark:text-orange-400">{dsc} DSC</span>
-          <span className="text-teal-600 dark:text-teal-400">{self} self</span>
-          <span className="text-green-600 dark:text-green-400">{complete} complete</span>
+          <span className="text-blue-600 dark:text-blue-400">{probableDimer} probable dimer</span>
+          <span className="text-green-600 dark:text-green-400">{probableMonomer} probable monomer</span>
         </div>
       </div>
 

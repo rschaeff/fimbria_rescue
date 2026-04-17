@@ -5,6 +5,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import RescueClassBadge from './RescueClassBadge';
 import CompletenessBadge from './CompletenessBadge';
+import ClanBadge from '@/components/pfam-clan/ClanBadge';
 import Pagination from '@/components/ui/Pagination';
 import type { RescueRow } from '@/lib/types';
 
@@ -140,8 +141,8 @@ export default function RescueTable({
             >
               <option value="">All</option>
               <option value="donor_strand_dependent">donor strand dependent</option>
-              <option value="self_complemented">self complemented</option>
-              <option value="complete">complete</option>
+              <option value="probable_dimer">probable dimer</option>
+              <option value="probable_monomer">probable monomer</option>
               <option value="unknown">unknown</option>
             </select>
           </div>
@@ -248,6 +249,9 @@ export default function RescueTable({
               <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                 Pfam
               </th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                Clan
+              </th>
               <th className={thClass} onClick={() => handleSort('mono_mean_plddt')}>
                 Mono pLDDT{sortIndicator('mono_mean_plddt')}
               </th>
@@ -297,8 +301,13 @@ export default function RescueTable({
                 <td className="px-4 py-3 text-sm text-gray-900 dark:text-gray-100 max-w-[200px] truncate">
                   {row.organism}
                 </td>
-                <td className="px-4 py-3 text-sm text-gray-900 dark:text-gray-100">
-                  {row.f_group}
+                <td className="px-4 py-3 text-sm">
+                  <Link
+                    href={`/families/${encodeURIComponent(row.f_group)}`}
+                    className="text-blue-600 dark:text-blue-400 hover:underline"
+                  >
+                    {row.f_group}
+                  </Link>
                 </td>
                 <td className="px-4 py-3 text-sm">
                   {row.pfam_acc ? (
@@ -306,14 +315,17 @@ export default function RescueTable({
                       href={`https://www.ebi.ac.uk/interpro/entry/pfam/${row.pfam_acc}/`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="text-blue-600 dark:text-blue-400 hover:underline"
-                      title={row.pfam_id || undefined}
+                      className="text-blue-600 dark:text-blue-400 hover:underline whitespace-nowrap"
+                      title={row.pfam_description || undefined}
                     >
-                      {row.pfam_acc}
+                      {row.pfam_acc}{row.pfam_id ? ` ${row.pfam_id}` : ''}
                     </a>
                   ) : (
                     <span className="text-gray-400">-</span>
                   )}
+                </td>
+                <td className="px-4 py-3 text-sm whitespace-nowrap">
+                  <ClanBadge clanAcc={row.clan_acc} clanName={row.clan_name} />
                 </td>
                 <td className="px-4 py-3 text-sm text-gray-900 dark:text-gray-100">
                   {Number(row.mono_mean_plddt).toFixed(1)}

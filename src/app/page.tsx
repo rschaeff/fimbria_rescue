@@ -63,7 +63,7 @@ export default async function HomePage() {
       </div>
 
       {/* Navigation cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-6">
         <Link
           href="/rescue"
           className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6 hover:border-blue-400 dark:hover:border-blue-500 transition-colors group"
@@ -84,6 +84,17 @@ export default async function HomePage() {
           </h3>
           <p className="text-sm text-gray-500 dark:text-gray-400">
             Completeness breakdown by ECOD F-group with pocket signatures and reclassification proposals.
+          </p>
+        </Link>
+        <Link
+          href="/pfam-clan"
+          className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6 hover:border-blue-400 dark:hover:border-blue-500 transition-colors group"
+        >
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 mb-2">
+            Pfam Clan Lookup
+          </h3>
+          <p className="text-sm text-gray-500 dark:text-gray-400">
+            Inverse perspective: CL0204 Adhesin clan → ECOD mapping with boundary disagreement analysis.
           </p>
         </Link>
         <Link

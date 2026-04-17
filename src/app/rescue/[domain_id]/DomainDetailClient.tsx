@@ -13,6 +13,7 @@ import ProteinComparisonCard from '@/components/rescue/ProteinComparisonCard';
 import PocketSignatureCard from '@/components/rescue/PocketSignatureCard';
 import ReclassificationCard from '@/components/rescue/ReclassificationCard';
 import HeterodimerTable from '@/components/heterodimers/HeterodimerTable';
+import ClanBadge from '@/components/pfam-clan/ClanBadge';
 import type { DomainDetail, ResiduePlddt, SequenceData, StructurePath, StrandExchange, InterChainHbond, DomainCompleteness, ProteinDomainComparison, ProteinInfo, PocketSignature, ReclassificationProposal, HeterodimerRow } from '@/lib/types';
 
 const PlddtChart = dynamic(() => import('@/components/rescue/PlddtChart'), {
@@ -74,15 +75,18 @@ export default function DomainDetailClient({ detail, plddts, sequences, structur
           </h1>
           <RescueClassBadge rescueClass={rescue.rescue_class} />
           {completeness && <CompletenessBadge completeness={completeness.completeness} />}
+          {target.clan_acc && <ClanBadge clanAcc={target.clan_acc} clanName={target.clan_name} />}
         </div>
         <div className="text-sm text-gray-600 dark:text-gray-400">
           {target.uniprot_acc} &middot; {target.organism} &middot;
-          T-group {target.t_group}, F-group {target.f_group}
+          T-group {target.t_group}, F-group{' '}
+          <Link href={`/families/${encodeURIComponent(target.f_group)}`} className="text-blue-600 dark:text-blue-400 hover:underline">{target.f_group}</Link>
           {target.pfam_acc && (
             <>
               {' '}&middot;{' '}
-              <a href={`https://www.ebi.ac.uk/interpro/entry/pfam/${target.pfam_acc}/`} target="_blank" rel="noopener noreferrer" className="text-blue-600 dark:text-blue-400 hover:underline">{target.pfam_acc}</a>
-              {target.pfam_id && <span className="text-gray-400"> ({target.pfam_id})</span>}
+              <a href={`https://www.ebi.ac.uk/interpro/entry/pfam/${target.pfam_acc}/`} target="_blank" rel="noopener noreferrer" className="text-blue-600 dark:text-blue-400 hover:underline" title={target.pfam_description || undefined}>
+                {target.pfam_acc}{target.pfam_id ? ` ${target.pfam_id}` : ''}
+              </a>
             </>
           )}
           {' '}&middot; {target.domain_range} ({target.domain_length} res)

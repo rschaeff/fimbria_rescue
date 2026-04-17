@@ -19,8 +19,8 @@ export default async function ArchaeaPage() {
   }
 
   const dsc = domains.filter((d) => d.completeness === 'donor_strand_dependent').length;
-  const self = domains.filter((d) => d.completeness === 'self_complemented').length;
-  const complete = domains.filter((d) => d.completeness === 'complete').length;
+  const probableDimer = domains.filter((d) => d.completeness === 'probable_dimer').length;
+  const probableMonomer = domains.filter((d) => d.completeness === 'probable_monomer').length;
 
   const pctDsc = domains.length > 0 ? Math.round((dsc / domains.length) * 100) : 0;
   const bacterialDsc = stats.bacterial_completeness.find((c) => c.completeness === 'donor_strand_dependent')?.count || 0;

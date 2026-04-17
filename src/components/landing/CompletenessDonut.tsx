@@ -8,15 +8,15 @@ interface CompletenessDonutProps {
 
 const COLORS: Record<string, string> = {
   donor_strand_dependent: '#f97316',
-  self_complemented: '#0d9488',
-  complete: '#22c55e',
+  probable_dimer: '#3b82f6',
+  probable_monomer: '#22c55e',
   unknown: '#9ca3af',
 };
 
 const LABELS: Record<string, string> = {
   donor_strand_dependent: 'DSC',
-  self_complemented: 'Self',
-  complete: 'Complete',
+  probable_dimer: 'Prob. Dimer',
+  probable_monomer: 'Prob. Monomer',
   unknown: 'Unknown',
 };
 

@@ -81,8 +81,8 @@ export default function FamilyTable({ families }: FamilyTableProps) {
                 <td className="px-3 py-2">
                   <div className="flex h-4 w-32 rounded overflow-hidden bg-gray-200 dark:bg-gray-700">
                     {f.dsc > 0 && <div style={{ width: `${f.pct_dsc}%` }} className="bg-orange-400" title={`DSC: ${f.dsc}`} />}
-                    {f.self_comp > 0 && <div style={{ width: `${f.pct_self}%` }} className="bg-teal-400" title={`Self: ${f.self_comp}`} />}
-                    {f.complete > 0 && <div style={{ width: `${f.pct_complete}%` }} className="bg-green-400" title={`Complete: ${f.complete}`} />}
+                    {f.probable_dimer > 0 && <div style={{ width: `${f.pct_probable_dimer}%` }} className="bg-blue-400" title={`Probable dimer: ${f.probable_dimer}`} />}
+                    {f.probable_monomer > 0 && <div style={{ width: `${f.pct_probable_monomer}%` }} className="bg-green-400" title={`Probable monomer: ${f.probable_monomer}`} />}
                   </div>
                 </td>
                 <td className="px-3 py-2 text-sm text-gray-900 dark:text-gray-100">{f.pct_dsc}%</td>

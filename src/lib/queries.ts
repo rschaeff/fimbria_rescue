@@ -20,6 +20,8 @@ import type {
   FamilyRow,
   HeterodimerRow,
   HeterodimerHbond,
+  PfamClanRow,
+  PfamClanDisagreement,
 } from './types';
 
 export async function getStats(): Promise<StatsData> {
@@ -164,7 +166,10 @@ export async function getRescueList(
   const offsetParam = `$${params.length}`;
 
   return query<RescueRow>(
-    `SELECT t.domain_id, t.organism, t.f_group, t.pfam_acc, t.pfam_id, t.domain_length,
+    `SELECT t.domain_id, t.organism, t.f_group, t.pfam_acc, t.pfam_id,
+            pf.description as pfam_description,
+            pc.clan_acc, pc.clan_name,
+            t.domain_length,
             r.mono_mean_plddt, r.dimer_mean_plddt, r.delta_mean_plddt,
             r.rescued_residues, r.rescue_class,
             p.iptm, p.inter_chain_pae,
@@ -176,6 +181,8 @@ export async function getRescueList(
      JOIN fimbria.predictions p ON r.dimer_prediction_id = p.id
      LEFT JOIN fimbria.strand_exchange se ON se.prediction_id = p.id
      LEFT JOIN fimbria.domain_completeness dc ON dc.target_id = t.id
+     LEFT JOIN ecod_commons.pfam_families pf ON pf.pfam_acc = t.pfam_acc
+     LEFT JOIN public.pfam_clan pc ON pc.pfam_acc = t.pfam_acc
      ${where}
      ORDER BY ${sortColumn} ${dir}
      LIMIT ${limitParam} OFFSET ${offsetParam}`,
@@ -194,7 +201,10 @@ export async function getRescueAll(
   const dir = sortDir === 'asc' ? 'ASC' : 'DESC';
 
   return query<RescueRow>(
-    `SELECT t.domain_id, t.organism, t.f_group, t.pfam_acc, t.pfam_id, t.domain_length,
+    `SELECT t.domain_id, t.organism, t.f_group, t.pfam_acc, t.pfam_id,
+            pf.description as pfam_description,
+            pc.clan_acc, pc.clan_name,
+            t.domain_length,
             r.mono_mean_plddt, r.dimer_mean_plddt, r.delta_mean_plddt,
             r.rescued_residues, r.rescue_class,
             p.iptm, p.inter_chain_pae,
@@ -206,6 +216,8 @@ export async function getRescueAll(
      JOIN fimbria.predictions p ON r.dimer_prediction_id = p.id
      LEFT JOIN fimbria.strand_exchange se ON se.prediction_id = p.id
      LEFT JOIN fimbria.domain_completeness dc ON dc.target_id = t.id
+     LEFT JOIN ecod_commons.pfam_families pf ON pf.pfam_acc = t.pfam_acc
+     LEFT JOIN public.pfam_clan pc ON pc.pfam_acc = t.pfam_acc
      ${where}
      ORDER BY ${sortColumn} ${dir}`,
     params
@@ -223,6 +235,8 @@ export async function getRescueCount(filters: RescueFilters = {}): Promise<numbe
      JOIN fimbria.predictions p ON r.dimer_prediction_id = p.id
      LEFT JOIN fimbria.strand_exchange se ON se.prediction_id = p.id
      LEFT JOIN fimbria.domain_completeness dc ON dc.target_id = t.id
+     LEFT JOIN ecod_commons.pfam_families pf ON pf.pfam_acc = t.pfam_acc
+     LEFT JOIN public.pfam_clan pc ON pc.pfam_acc = t.pfam_acc
      ${where}`,
     params
   );
@@ -232,7 +246,12 @@ export async function getRescueCount(filters: RescueFilters = {}): Promise<numbe
 
 export async function getRescueDetail(domainId: string): Promise<DomainDetail | null> {
   const target = await queryOne<Target>(
-    'SELECT * FROM fimbria.targets WHERE domain_id = $1',
+    `SELECT t.*, pf.description as pfam_description,
+            pc.clan_acc, pc.clan_name
+     FROM fimbria.targets t
+     LEFT JOIN ecod_commons.pfam_families pf ON pf.pfam_acc = t.pfam_acc
+     LEFT JOIN public.pfam_clan pc ON pc.pfam_acc = t.pfam_acc
+     WHERE t.domain_id = $1`,
     [domainId]
   );
 
@@ -465,14 +484,14 @@ export async function getReclassificationProposal(domainId: string): Promise<Rec
 
 export async function getFamilies(): Promise<FamilyRow[]> {
   const rows = await query<{
-    f_group: string; total: string; dsc: string; self_comp: string; complete: string;
+    f_group: string; total: string; dsc: string; probable_dimer: string; probable_monomer: string;
     avg_delta: string; avg_iptm: string;
   }>(
     `SELECT t.f_group,
             COUNT(*)::text as total,
             SUM(CASE WHEN dc.completeness = 'donor_strand_dependent' THEN 1 ELSE 0 END)::text as dsc,
-            SUM(CASE WHEN dc.completeness = 'self_complemented' THEN 1 ELSE 0 END)::text as self_comp,
-            SUM(CASE WHEN dc.completeness = 'complete' THEN 1 ELSE 0 END)::text as complete,
+            SUM(CASE WHEN dc.completeness = 'probable_dimer' THEN 1 ELSE 0 END)::text as probable_dimer,
+            SUM(CASE WHEN dc.completeness = 'probable_monomer' THEN 1 ELSE 0 END)::text as probable_monomer,
             ROUND(AVG(r.delta_mean_plddt)::numeric, 1)::text as avg_delta,
             ROUND(AVG(p.iptm)::numeric, 3)::text as avg_iptm
      FROM fimbria.targets t
@@ -486,17 +505,17 @@ export async function getFamilies(): Promise<FamilyRow[]> {
   return rows.map((r) => {
     const total = parseInt(r.total);
     const dsc = parseInt(r.dsc);
-    const self_comp = parseInt(r.self_comp);
-    const complete = parseInt(r.complete);
+    const probable_dimer = parseInt(r.probable_dimer);
+    const probable_monomer = parseInt(r.probable_monomer);
     return {
       f_group: r.f_group,
       total,
       dsc,
-      self_comp,
-      complete,
+      probable_dimer,
+      probable_monomer,
       pct_dsc: total > 0 ? Math.round((dsc / total) * 100) : 0,
-      pct_self: total > 0 ? Math.round((self_comp / total) * 100) : 0,
-      pct_complete: total > 0 ? Math.round((complete / total) * 100) : 0,
+      pct_probable_dimer: total > 0 ? Math.round((probable_dimer / total) * 100) : 0,
+      pct_probable_monomer: total > 0 ? Math.round((probable_monomer / total) * 100) : 0,
       avg_iptm: parseFloat(r.avg_iptm) || 0,
       avg_delta: parseFloat(r.avg_delta) || 0,
     };
@@ -510,7 +529,10 @@ export async function getFamilyDetail(fgroup: string): Promise<{
 }> {
   const [members, pockets, proposals] = await Promise.all([
     query<RescueRow>(
-      `SELECT t.domain_id, t.organism, t.f_group, t.pfam_acc, t.pfam_id, t.domain_length,
+      `SELECT t.domain_id, t.organism, t.f_group, t.pfam_acc, t.pfam_id,
+              pf.description as pfam_description,
+              pc.clan_acc, pc.clan_name,
+              t.domain_length,
               r.mono_mean_plddt, r.dimer_mean_plddt, r.delta_mean_plddt,
               r.rescued_residues, r.rescue_class,
               p.iptm, p.inter_chain_pae,
@@ -522,6 +544,8 @@ export async function getFamilyDetail(fgroup: string): Promise<{
        JOIN fimbria.predictions p ON r.dimer_prediction_id = p.id
        LEFT JOIN fimbria.strand_exchange se ON se.prediction_id = p.id
        LEFT JOIN fimbria.domain_completeness dc ON dc.target_id = t.id
+       LEFT JOIN ecod_commons.pfam_families pf ON pf.pfam_acc = t.pfam_acc
+       LEFT JOIN public.pfam_clan pc ON pc.pfam_acc = t.pfam_acc
        WHERE t.f_group = $1
        ORDER BY r.delta_mean_plddt DESC`,
       [fgroup]
@@ -625,7 +649,10 @@ export async function getHeterodimersForDomain(domainId: string): Promise<Hetero
 
 export async function getArchaeaDomains(): Promise<RescueRow[]> {
   return query<RescueRow>(
-    `SELECT t.domain_id, t.organism, t.f_group, t.pfam_acc, t.pfam_id, t.domain_length,
+    `SELECT t.domain_id, t.organism, t.f_group, t.pfam_acc, t.pfam_id,
+            pf.description as pfam_description,
+            pc.clan_acc, pc.clan_name,
+            t.domain_length,
             r.mono_mean_plddt, r.dimer_mean_plddt, r.delta_mean_plddt,
             r.rescued_residues, r.rescue_class,
             p.iptm, p.inter_chain_pae,
@@ -637,6 +664,8 @@ export async function getArchaeaDomains(): Promise<RescueRow[]> {
      JOIN fimbria.predictions p ON r.dimer_prediction_id = p.id
      LEFT JOIN fimbria.strand_exchange se ON se.prediction_id = p.id
      LEFT JOIN fimbria.domain_completeness dc ON dc.target_id = t.id
+     LEFT JOIN ecod_commons.pfam_families pf ON pf.pfam_acc = t.pfam_acc
+     LEFT JOIN public.pfam_clan pc ON pc.pfam_acc = t.pfam_acc
      WHERE t.batch = 'archaea'
      ORDER BY r.delta_mean_plddt DESC`
   );
@@ -667,6 +696,112 @@ export async function getArchaeaHeterodimers(): Promise<HeterodimerRow[]> {
      WHERE hp.batch = 'archaea' AND hp.completed = true
      ORDER BY hp.iptm DESC`
   );
+}
+
+export async function getPfamClan(clanAcc: string = 'CL0204'): Promise<PfamClanRow[]> {
+  const rows = await query<{
+    pfam_acc: string; pfam_short_name: string; pfam_description: string | null;
+    clan_acc: string; clan_name: string; ecod_fgroups: string | null;
+    fimbria_domain_count: string; dsc: string;
+    probable_dimer: string; probable_monomer: string;
+    out_of_tgroup_hit: boolean;
+  }>(
+    `SELECT pc.pfam_acc,
+            pc.pfam_short_name,
+            pf.description as pfam_description,
+            pc.clan_acc,
+            pc.clan_name,
+            (SELECT string_agg(DISTINCT f.f_id, ', ' ORDER BY f.f_id)
+             FROM public.f_id_pfam_acc f
+             WHERE f.pfam_acc = pc.pfam_acc) as ecod_fgroups,
+            COUNT(DISTINCT t.id)::text as fimbria_domain_count,
+            SUM(CASE WHEN dc.completeness = 'donor_strand_dependent' THEN 1 ELSE 0 END)::text as dsc,
+            SUM(CASE WHEN dc.completeness = 'probable_dimer' THEN 1 ELSE 0 END)::text as probable_dimer,
+            SUM(CASE WHEN dc.completeness = 'probable_monomer' THEN 1 ELSE 0 END)::text as probable_monomer,
+            EXISTS (SELECT 1 FROM public.f_id_pfam_acc f
+                    WHERE f.pfam_acc = pc.pfam_acc
+                      AND f.f_id NOT LIKE '11.1.5.%') as out_of_tgroup_hit
+     FROM public.pfam_clan pc
+     LEFT JOIN ecod_commons.pfam_families pf ON pf.pfam_acc = pc.pfam_acc
+     LEFT JOIN fimbria.targets t ON t.pfam_acc = pc.pfam_acc
+     LEFT JOIN fimbria.domain_completeness dc ON dc.target_id = t.id
+     WHERE pc.clan_acc = $1
+     GROUP BY pc.pfam_acc, pc.pfam_short_name, pf.description, pc.clan_acc, pc.clan_name
+     ORDER BY pc.pfam_acc`,
+    [clanAcc]
+  );
+
+  return rows.map((r) => ({
+    pfam_acc: r.pfam_acc,
+    pfam_short_name: r.pfam_short_name,
+    pfam_description: r.pfam_description,
+    clan_acc: r.clan_acc,
+    clan_name: r.clan_name,
+    ecod_fgroups: r.ecod_fgroups,
+    fimbria_domain_count: parseInt(r.fimbria_domain_count),
+    dsc: parseInt(r.dsc),
+    probable_dimer: parseInt(r.probable_dimer),
+    probable_monomer: parseInt(r.probable_monomer),
+    has_fgroup_mapping: r.ecod_fgroups != null,
+    out_of_tgroup: r.out_of_tgroup_hit,
+  }));
+}
+
+export async function getPfamClanDisagreements(clanAcc: string = 'CL0204'): Promise<PfamClanDisagreement[]> {
+  const [noFgroup, outOfTgroup] = await Promise.all([
+    query<{
+      pfam_acc: string; pfam_short_name: string; pfam_description: string | null;
+      fimbria_count: string;
+    }>(
+      `SELECT pc.pfam_acc, pc.pfam_short_name, pf.description as pfam_description,
+              (SELECT COUNT(*) FROM fimbria.targets t WHERE t.pfam_acc = pc.pfam_acc)::text as fimbria_count
+       FROM public.pfam_clan pc
+       LEFT JOIN ecod_commons.pfam_families pf ON pf.pfam_acc = pc.pfam_acc
+       WHERE pc.clan_acc = $1
+         AND NOT EXISTS (
+           SELECT 1 FROM public.f_id_pfam_acc f WHERE f.pfam_acc = pc.pfam_acc
+         )`,
+      [clanAcc]
+    ),
+    query<{
+      pfam_acc: string; pfam_short_name: string; pfam_description: string | null;
+      f_id: string; fimbria_count: string;
+    }>(
+      `SELECT pc.pfam_acc, pc.pfam_short_name, pf.description as pfam_description, f.f_id,
+              (SELECT COUNT(*) FROM fimbria.targets t WHERE t.pfam_acc = pc.pfam_acc)::text as fimbria_count
+       FROM public.pfam_clan pc
+       LEFT JOIN ecod_commons.pfam_families pf ON pf.pfam_acc = pc.pfam_acc
+       JOIN public.f_id_pfam_acc f ON f.pfam_acc = pc.pfam_acc
+       WHERE pc.clan_acc = $1 AND f.f_id NOT LIKE '11.1.5.%'`,
+      [clanAcc]
+    ),
+  ]);
+
+  const disagreements: PfamClanDisagreement[] = [];
+  for (const r of noFgroup) {
+    disagreements.push({
+      type: 'no_fgroup',
+      pfam_acc: r.pfam_acc,
+      pfam_short_name: r.pfam_short_name,
+      pfam_description: r.pfam_description,
+      out_of_tgroup_fgroup: null,
+      fimbria_count: parseInt(r.fimbria_count),
+      proposed_action: 'Curate a new ECOD F-group or verify Pfam representation',
+    });
+  }
+  for (const r of outOfTgroup) {
+    disagreements.push({
+      type: 'out_of_tgroup',
+      pfam_acc: r.pfam_acc,
+      pfam_short_name: r.pfam_short_name,
+      pfam_description: r.pfam_description,
+      out_of_tgroup_fgroup: r.f_id,
+      fimbria_count: parseInt(r.fimbria_count),
+      proposed_action: 'Reconcile ECOD T-group boundary with Pfam clan boundary',
+    });
+  }
+
+  return disagreements;
 }
 
 export async function getLiterature(): Promise<LiteratureEntry[]> {
